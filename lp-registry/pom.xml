@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  @Author: Yeharn
+  @Date:2026-11-05
+  @Version: 1.0.0
+  @Description: 注册中心（Spring Cloud Netflix Eureka Server，端口 8849）
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.yeharn.lp</groupId>
+        <artifactId>learning-platform</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>lp-registry</artifactId>
+    <name>lp-registry</name>
+    <description>注册中心：Spring Cloud Netflix Eureka Server（纯内存注册表，无需数据库，启动即用）</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>lp-registry</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

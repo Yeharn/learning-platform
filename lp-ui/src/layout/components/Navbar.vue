@@ -6,13 +6,13 @@
 -->
 
 <template>
-  <div class="navbar">
+  <div class="navbar" :class="{ compact }">
     <div class="left">
       <el-icon class="collapse-btn" @click="appStore.toggleSidebar()">
-        <Expand v-if="appStore.sidebarCollapsed" />
+        <Expand v-if="appStore.sidebarCollapsed || compact" />
         <Fold v-else />
       </el-icon>
-      <el-breadcrumb separator="/">
+      <el-breadcrumb separator="/" class="crumbs">
         <el-breadcrumb-item :to="{ path: '/dashboard' }">首页</el-breadcrumb-item>
         <el-breadcrumb-item v-for="item in breadcrumbs" :key="item.path">
           {{ item.meta?.title }}
@@ -58,11 +58,11 @@
 
       <el-dropdown trigger="click" @command="handleCommand">
         <div class="user-info">
-          <el-avatar :size="30" :src="userStore.avatar">
+          <el-avatar :size="compact ? 26 : 30" :src="userStore.avatar">
             {{ (userStore.nickname || 'U').slice(0, 1) }}
           </el-avatar>
-          <span class="name">{{ userStore.nickname }}</span>
-          <el-icon><CaretBottom /></el-icon>
+          <span v-if="!compact" class="name">{{ userStore.nickname }}</span>
+          <el-icon class="caret"><CaretBottom /></el-icon>
         </div>
         <template #dropdown>
           <el-dropdown-menu>
@@ -85,6 +85,9 @@ import { usePermissionStore } from '@/stores/permission'
 import { useOnlineStore } from '@/stores/online'
 import { unreadCount } from '@/api/extras'
 import { connectWebSocket, disconnectWebSocket } from '@/utils/websocket'
+
+const props = withDefaults(defineProps<{ compact?: boolean }>(), { compact: false })
+const compact = computed(() => props.compact)
 
 const appStore = useAppStore()
 const userStore = useUserStore()
@@ -181,30 +184,89 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+
+  &.compact {
+    .crumbs {
+      display: none;
+    }
+  }
 }
 
 .left {
   display: flex;
   align-items: center;
   gap: 16px;
+  min-width: 0;
+
+  .crumbs {
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    :deep(.el-breadcrumb__inner) {
+      color: var(--lp-text-muted);
+
+      &.is-link:hover {
+        color: var(--lp-primary);
+      }
+    }
+
+    :deep(.el-breadcrumb__item:last-child .el-breadcrumb__inner) {
+      color: var(--lp-text);
+      font-weight: 500;
+    }
+  }
 }
 
 .collapse-btn {
-  font-size: 20px;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
   cursor: pointer;
-  color: #4b5563;
+  color: var(--lp-text-secondary);
+  border-radius: var(--lp-radius-sm);
+  transition: background 0.18s ease, color 0.18s ease;
+
+  &:hover {
+    color: var(--lp-primary);
+    background: color-mix(in srgb, var(--lp-primary) 10%, transparent);
+  }
 }
 
 .right {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
+/* 顶部图标按钮：统一 34px 方形热区（与消息/在线徽标一致） */
 .nav-icon {
+  width: 34px;
+  height: 34px;
   font-size: 18px;
-  color: var(--lp-text, #4b5563);
+  color: var(--lp-text-secondary);
   cursor: pointer;
+  border-radius: var(--lp-radius-sm);
+  transition: color 0.18s ease, background 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  :deep(.el-icon) {
+    font-size: 18px;
+  }
+
+  &:hover {
+    color: var(--lp-primary);
+    background: color-mix(in srgb, var(--lp-primary) 10%, transparent);
+  }
 }
 
 .theme-dot {
@@ -217,7 +279,7 @@ onUnmounted(() => {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    border: 1.5px solid #fff;
+    border: 1.5px solid var(--lp-surface, #fff);
   }
 }
 
@@ -240,16 +302,39 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  padding: 4px 6px;
-  border-radius: 6px;
+  padding: 4px 8px;
+  border-radius: var(--lp-radius-sm);
+  transition: background 0.18s ease;
+  max-width: 180px;
 
   &:hover {
-    background: #f3f4f6;
+    background: color-mix(in srgb, var(--lp-primary) 10%, transparent);
   }
 
   .name {
     font-size: 13px;
-    color: #374151;
+    color: var(--lp-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .caret {
+    font-size: 12px;
+    color: var(--lp-text-muted);
+  }
+}
+
+@media (max-width: 992px) {
+  .right {
+    gap: 6px;
+  }
+
+  .nav-icon,
+  .collapse-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
   }
 }
 </style>

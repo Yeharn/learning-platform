@@ -1,11 +1,11 @@
 /**
  * @Author: Yeharn
- * @Date:2026-11-04
+ * @Date:2026-11-05
  * @Version: 1.0.0
- * @Description: 定时任务接口
+ * @Description: 定时任务服务 - 任务管理与运行日志接口
  */
 
-package org.yeharn.lp.system.controller;
+package org.yeharn.lp.job.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import lombok.RequiredArgsConstructor;
@@ -20,24 +20,31 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.yeharn.lp.common.core.PageResult;
 import org.yeharn.lp.common.core.R;
-import org.yeharn.lp.common.log.BusinessType;
-import org.yeharn.lp.common.log.OperLog;
-import org.yeharn.lp.system.entity.SysJob;
-import org.yeharn.lp.system.job.JobService;
+import org.yeharn.lp.job.core.CronSupport;
+import org.yeharn.lp.job.entity.SysJob;
+import org.yeharn.lp.job.entity.SysJobLog;
+import org.yeharn.lp.job.service.JobService;
 
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 定时任务管理
+ * 定时任务管理：任务 CRUD、启停、执行一次、运行批次查询
+ * <p>
+ * 任务操作与执行记录统一记录在任务运行日志中，不再写入系统操作日志。
  */
 @RestController
 @RequestMapping("/tool/job")
 @RequiredArgsConstructor
-public class SysJobController {
+public class JobController {
+
+    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final JobService jobService;
+
+    /* ---------------- 任务 ---------------- */
 
     @SaCheckPermission("tool:job:list")
     @GetMapping("/list")
@@ -52,21 +59,19 @@ public class SysJobController {
     public R<Map<String, Object>> info() {
         Map<String, Object> info = new LinkedHashMap<>();
         info.put("handlers", jobService.handlers());
-        info.put("scheduler", "内置 ThreadPoolTaskScheduler");
-        info.put("xxlJobEnabled", Boolean.getBoolean("lp.xxl-job.enabled") || isActive());
+        info.put("scheduler", "lp-job ThreadPoolTaskScheduler + Quartz Cron");
         return R.ok(info);
     }
 
-    private boolean isActive() {
-        try {
-            return Boolean.parseBoolean(System.getProperty("lp.xxl-job.enabled", "false"));
-        } catch (Exception e) {
-            return false;
-        }
+    /** cron 预览：返回未来 N 次执行时间（默认 6 条），供前端可视化选择同步展示 */
+    @SaCheckPermission("tool:job:list")
+    @GetMapping("/preview")
+    public R<List<String>> preview(@RequestParam String cron,
+                                   @RequestParam(defaultValue = "6") int count) {
+        return R.ok(CronSupport.preview(cron, count).stream().map(FMT::format).toList());
     }
 
     @SaCheckPermission("tool:job:add")
-    @OperLog(title = "定时任务-新增", businessType = BusinessType.INSERT, saveParam = false)
     @PostMapping
     public R<Void> add(@RequestBody SysJob job) {
         jobService.add(job);
@@ -74,7 +79,6 @@ public class SysJobController {
     }
 
     @SaCheckPermission("tool:job:edit")
-    @OperLog(title = "定时任务-修改", businessType = BusinessType.UPDATE, saveParam = false)
     @PutMapping
     public R<Void> update(@RequestBody SysJob job) {
         jobService.update(job);
@@ -82,7 +86,6 @@ public class SysJobController {
     }
 
     @SaCheckPermission("tool:job:remove")
-    @OperLog(title = "定时任务-删除", businessType = BusinessType.DELETE)
     @DeleteMapping("/{ids}")
     public R<Void> remove(@PathVariable List<Long> ids) {
         jobService.delete(ids);
@@ -90,7 +93,6 @@ public class SysJobController {
     }
 
     @SaCheckPermission("tool:job:changeStatus")
-    @OperLog(title = "定时任务-启停", businessType = BusinessType.UPDATE)
     @PutMapping("/changeStatus")
     public R<Void> changeStatus(@RequestBody SysJob job) {
         jobService.changeStatus(job);
@@ -98,10 +100,26 @@ public class SysJobController {
     }
 
     @SaCheckPermission("tool:job:run")
-    @OperLog(title = "定时任务-执行一次", businessType = BusinessType.OTHER)
     @PostMapping("/run/{jobId}")
     public R<Void> run(@PathVariable Long jobId) {
         jobService.runOnce(jobId);
         return R.ok();
+    }
+
+    /* ---------------- 运行日志（批次） ---------------- */
+
+    @SaCheckPermission("tool:job:list")
+    @GetMapping("/log/list")
+    public R<PageResult<SysJobLog>> logList(@RequestParam(required = false) Long jobId,
+                                            @RequestParam(required = false) String status,
+                                            @RequestParam(defaultValue = "1") int pageNum,
+                                            @RequestParam(defaultValue = "10") int pageSize) {
+        return R.ok(jobService.logPage(jobId, status, pageNum, pageSize));
+    }
+
+    @SaCheckPermission("tool:job:list")
+    @GetMapping("/log/{logId}")
+    public R<SysJobLog> logDetail(@PathVariable Long logId) {
+        return R.ok(jobService.logDetail(logId));
     }
 }

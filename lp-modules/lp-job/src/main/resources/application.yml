@@ -1,0 +1,90 @@
+# @Author: Yeharn
+# @Date:2026-11-05
+# @Version: 1.0.0
+# @Description: 定时任务服务主配置：端口、数据源、调度线程池、接口文档
+
+server:
+  port: 9205
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: lp-job
+  # 环境由 Maven profile 打包时注入：mvn package -P dev|test|prod
+  profiles:
+    active: @profiles.active@
+  jackson:
+    time-zone: GMT+8
+
+mybatis-flex:
+  global-config:
+    print-banner: false
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  timeout: 86400
+  active-timeout: -1
+  is-concurrent: true
+  is-share: false
+  token-style: uuid
+  is-read-cookie: false
+  is-read-header: true
+  is-log: false
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+  packages-to-scan: org.yeharn.lp.job
+
+knife4j:
+  enable: true
+  production: false
+  setting:
+    language: zh_cn
+    enable-footer: false
+    enable-open-api: false
+
+lp:
+  job:
+    # 调度线程池大小
+    pool-size: 8
+    # 运行日志保留天数（内置清理任务使用）
+    log-retain-days: 30
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.yeharn.lp: info
+    com.mybatisflex: warn
+    org.quartz: warn
+
+# Eureka 注册中心（Spring Cloud Netflix）
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_ADDR:http://127.0.0.1:8849/eureka}
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30

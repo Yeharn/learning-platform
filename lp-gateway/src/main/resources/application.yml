@@ -14,21 +14,7 @@ spring:
   # 环境由 Maven profile 打包时注入：mvn package -P dev|test|prod
   profiles:
     active: @profiles.active@
-  config:
-    import:
-      - optional:nacos:lp-gateway.yaml
   cloud:
-    nacos:
-      server-addr: ${NACOS_ADDR:127.0.0.1:8848}
-      discovery:
-        namespace: public
-        group: DEFAULT_GROUP
-        metadata:
-          version: 1.0.0
-      config:
-        namespace: public
-        group: DEFAULT_GROUP
-        file-extension: yaml
     gateway:
       discovery:
         locator:
@@ -67,6 +53,17 @@ spring:
             - Path=/lp-flow/v3/api-docs
           filters:
             - RewritePath=/lp-flow/v3/api-docs, /v3/api-docs
+        - id: lp-job-api-docs
+          uri: lb://lp-job
+          predicates:
+            - Path=/lp-job/v3/api-docs
+          filters:
+            - RewritePath=/lp-job/v3/api-docs, /v3/api-docs
+        # 定时任务服务（须在 lp-system 之前匹配，/tool/job 优先路由到 lp-job）
+        - id: lp-job
+          uri: lb://lp-job
+          predicates:
+            - Path=/tool/job/**
         - id: lp-system
           uri: lb://lp-system
           predicates:
@@ -93,6 +90,9 @@ knife4j:
       - name: 系统服务
         url: /lp-system/v3/api-docs
         service-name: lp-system
+      - name: 任务服务
+        url: /lp-job/v3/api-docs
+        service-name: lp-job
       - name: 监控服务
         url: /lp-monitor/v3/api-docs
         service-name: lp-monitor
@@ -128,3 +128,13 @@ logging:
   level:
     org.yeharn.lp: info
     org.springframework.cloud.gateway: warn
+# Eureka 注册中心（Spring Cloud Netflix）
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_ADDR:http://127.0.0.1:8849/eureka}
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30

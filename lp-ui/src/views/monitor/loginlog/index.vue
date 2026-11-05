@@ -6,7 +6,15 @@
 -->
 
 <template>
-  <div class="app-container">
+  <div class="tech-page">
+    <div class="tech-header">
+      <div class="tech-title">
+        <span class="tech-pulse" />
+        <span>登录日志</span>
+        <small>LOGIN AUDIT</small>
+      </div>
+    </div>
+
     <el-form :inline="true" :model="query" class="search-form">
       <el-form-item label="账号">
         <el-input v-model="query.username" placeholder="请输入账号" clearable @keyup.enter="getList" />

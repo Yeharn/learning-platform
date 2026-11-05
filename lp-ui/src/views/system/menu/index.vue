@@ -30,7 +30,7 @@
       </div>
 
       <el-table
-        v-if="tableVisible"
+        ref="tableRef"
         v-loading="loading"
         :data="list"
         row-key="menuId"
@@ -52,7 +52,7 @@
         <el-table-column prop="perms" label="权限标识" min-width="160" show-overflow-tooltip />
         <el-table-column prop="icon" label="图标" width="90" align="center">
           <template #default="{ row }">
-            <el-icon v-if="row.icon"><component :is="row.icon" /></el-icon>
+            <el-icon v-if="isValidIcon(row.icon)"><component :is="row.icon" /></el-icon>
             <span v-else>-</span>
           </template>
         </el-table-column>
@@ -165,7 +165,8 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type TableInstance } from 'element-plus'
+import * as ElIcons from '@element-plus/icons-vue'
 import { addMenu, delMenu, getMenu, listMenu, updateMenu } from '@/api/system'
 import type { SysMenu } from '@/types'
 
@@ -174,15 +175,28 @@ const submitting = ref(false)
 const open = ref(false)
 const list = ref<SysMenu[]>([])
 const formRef = ref<FormInstance>()
+const tableRef = ref<TableInstance>()
 const expandAll = ref(true)
-const tableVisible = ref(true)
 
 const icons = [
   'Setting', 'Monitor', 'Tools', 'User', 'UserFilled', 'Menu', 'OfficeBuilding', 'Collection',
   'Edit', 'Bell', 'Coin', 'Connection', 'Key', 'Document', 'Cpu', 'DataLine', 'MagicStick',
-  'Odometer', 'Grid', 'List', 'Tickets', 'Files', 'Folder', 'Star', 'Promotion', 'ChatDotRound'
+  'Odometer', 'Grid', 'List', 'Tickets', 'Files', 'Folder', 'FolderOpened', 'Star', 'Promotion',
+  'ChatDotRound', 'DataAnalysis', 'Database', 'Link', 'Timer', 'Guide', 'Finished', 'Clock', 'Histogram'
 ]
 const iconList = icons
+
+/** 仅当图标名对应真实存在的 Element Plus 图标组件时才渲染，避免非法值（如 "#"）导致 createElement 抛错 */
+const iconCache = new Map<string, any>()
+function iconComp(name?: string) {
+  if (!name) return undefined
+  if (iconCache.has(name)) return iconCache.get(name)
+  const comp = (ElIcons as Record<string, any>)[name]
+  const valid = typeof comp === 'object' || typeof comp === 'function' ? comp : undefined
+  iconCache.set(name, valid)
+  return valid
+}
+const isValidIcon = (name?: string) => !!iconComp(name)
 
 const query = reactive({ menuName: '', status: '' })
 const form = ref<SysMenu>({})
@@ -198,6 +212,9 @@ async function getList() {
   loading.value = true
   try {
     list.value = await listMenu(query)
+    // 数据刷新后表格重新初始化，按当前展开状态同步一次
+    await nextTick()
+    if (!expandAll.value) setAllExpanded(false)
   } finally {
     loading.value = false
   }
@@ -249,12 +266,25 @@ async function handleDelete(row: SysMenu) {
   getList()
 }
 
+/** 递归收集所有含子节点的行，供展开/折叠使用 */
+function collectParentRows(rows: SysMenu[], acc: SysMenu[] = []): SysMenu[] {
+  for (const row of rows) {
+    const children = (row as any).children as SysMenu[] | undefined
+    if (children && children.length) {
+      acc.push(row)
+      collectParentRows(children, acc)
+    }
+  }
+  return acc
+}
+
+function setAllExpanded(expanded: boolean) {
+  collectParentRows(list.value).forEach((row) => tableRef.value?.toggleRowExpansion(row, expanded))
+}
+
 function toggleExpand() {
   expandAll.value = !expandAll.value
-  tableVisible.value = false
-  nextTick(() => {
-    tableVisible.value = true
-  })
+  setAllExpanded(expandAll.value)
 }
 
 onMounted(getList)

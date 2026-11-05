@@ -6,53 +6,43 @@
 -->
 
 <template>
-  <div class="app-container">
-    <div class="flex-between mb8">
-      <span class="page-title">Redis 监控</span>
-      <el-button icon="Refresh" :loading="loading" @click="load">刷新</el-button>
+  <div class="tech-page">
+    <div class="tech-header">
+      <div class="tech-title">
+        <span class="tech-pulse" />
+        <span>Redis 监控</span>
+        <small>CACHE CLUSTER INSIGHT</small>
+      </div>
+      <div class="tech-tools">
+        <el-button icon="Refresh" :loading="loading" @click="load">刷新</el-button>
+      </div>
+    </div>
+
+    <div class="tech-metrics">
+      <div class="tech-metric">
+        <div class="metric-label">Key 总数</div>
+        <div class="metric-value">{{ info.dbSize ?? 0 }}</div>
+        <div class="metric-sub">过期 {{ info.basic?.expired_keys ?? 0 }} · 淘汰 {{ info.basic?.evicted_keys ?? 0 }}</div>
+      </div>
+      <div class="tech-metric">
+        <div class="metric-label">客户端连接</div>
+        <div class="metric-value">{{ info.basic?.connected_clients ?? 0 }}</div>
+        <div class="metric-sub">阻塞 {{ info.basic?.blocked_clients ?? 0 }}</div>
+      </div>
+      <div class="tech-metric" :class="Number(info.hitRate || 0) < 90 ? 'is-warn' : ''">
+        <div class="metric-label">命中率</div>
+        <div class="metric-value">{{ info.hitRate ?? 0 }}<small>%</small></div>
+        <div class="metric-sub">命中 {{ info.basic?.keyspace_hits ?? 0 }}</div>
+      </div>
+      <div class="tech-metric">
+        <div class="metric-label">实时 OPS</div>
+        <div class="metric-value">{{ info.basic?.instantaneous_ops_per_sec ?? 0 }}</div>
+        <div class="metric-sub">累计命令 {{ info.basic?.total_commands_processed ?? 0 }}</div>
+      </div>
     </div>
 
     <el-row :gutter="16">
-      <el-col :xs="12" :md="6">
-        <div class="stat-card" style="background: linear-gradient(135deg, #dc2626, #f87171)">
-          <div>
-            <div class="stat-value">{{ info.dbSize ?? 0 }}</div>
-            <div class="stat-label">Key 总数</div>
-          </div>
-          <el-icon class="stat-icon"><Coin /></el-icon>
-        </div>
-      </el-col>
-      <el-col :xs="12" :md="6">
-        <div class="stat-card" style="background: linear-gradient(135deg, #0f766e, #14b8a6)">
-          <div>
-            <div class="stat-value">{{ info.basic?.connected_clients ?? 0 }}</div>
-            <div class="stat-label">客户端连接</div>
-          </div>
-          <el-icon class="stat-icon"><Connection /></el-icon>
-        </div>
-      </el-col>
-      <el-col :xs="12" :md="6">
-        <div class="stat-card" style="background: linear-gradient(135deg, #4f46e5, #818cf8)">
-          <div>
-            <div class="stat-value">{{ info.hitRate ?? 0 }}%</div>
-            <div class="stat-label">命中率</div>
-          </div>
-          <el-icon class="stat-icon"><DataLine /></el-icon>
-        </div>
-      </el-col>
-      <el-col :xs="12" :md="6">
-        <div class="stat-card" style="background: linear-gradient(135deg, #b45309, #f59e0b)">
-          <div>
-            <div class="stat-value">{{ info.basic?.instantaneous_ops_per_sec ?? 0 }}</div>
-            <div class="stat-label">OPS</div>
-          </div>
-          <el-icon class="stat-icon"><Odometer /></el-icon>
-        </div>
-      </el-col>
-    </el-row>
-
-    <el-row :gutter="16" class="mt16">
-      <el-col :xs="24" :md="12">
+      <el-col :xs="24" :lg="12">
         <el-card shadow="never">
           <template #header>基础信息</template>
           <el-descriptions :column="1" border>
@@ -76,7 +66,7 @@
         <el-card shadow="never">
           <template #header>内存与命中</template>
           <div class="kv"><span>内存使用率</span><b>{{ info.memoryUsage ?? 0 }}%</b></div>
-          <el-progress :percentage="Number(info.memoryUsage || 0)" :stroke-width="14" :color="'#dc2626'" />
+          <el-progress :percentage="Number(info.memoryUsage || 0)" :stroke-width="14" :color="memoryColor" />
           <div class="kv mt16"><span>命中次数</span><b>{{ info.basic?.keyspace_hits }}</b></div>
           <div class="kv"><span>未命中次数</span><b>{{ info.basic?.keyspace_misses }}</b></div>
           <div class="kv"><span>累计命令数</span><b>{{ info.basic?.total_commands_processed }}</b></div>
@@ -111,10 +101,17 @@
 
     <el-card shadow="never" class="mt16">
       <template #header>完整 INFO</template>
-      <el-collapse>
-        <el-collapse-item title="展开查看" name="info">
-          <div class="info-grid">
-            <div v-for="(value, key) in info.info || {}" :key="key" class="info-item">
+      <el-collapse class="tech-collapse">
+        <el-collapse-item name="info">
+          <template #title>
+            <span class="tech-collapse-label">
+              <i class="led" />
+              <span>展开查看</span>
+              <small>RAW DATA STREAM</small>
+            </span>
+          </template>
+          <div class="tech-info-grid">
+            <div v-for="(value, key) in info.info || {}" :key="key" class="tech-info-item">
               <span class="key">{{ key }}</span><span class="value">{{ value }}</span>
             </div>
           </div>
@@ -125,11 +122,22 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { redisInfo } from '@/api/monitor'
+import { useAppStore } from '@/stores/app'
 
+const appStore = useAppStore()
 const loading = ref(false)
 const info = ref<any>({})
+
+const memoryColor = computed(() => {
+  void appStore.theme
+  const root = getComputedStyle(document.documentElement)
+  const usage = Number(info.value.memoryUsage || 0)
+  if (usage > 85) return root.getPropertyValue('--lp-danger').trim() || '#ef4444'
+  if (usage > 65) return root.getPropertyValue('--lp-warning').trim() || '#f59e0b'
+  return root.getPropertyValue('--tech-cyan').trim() || '#22d3ee'
+})
 
 async function load() {
   loading.value = true
@@ -151,43 +159,19 @@ onMounted(load)
 .kv {
   display: flex;
   justify-content: space-between;
+  gap: 12px;
   font-size: 13px;
   padding: 8px 0;
-  border-bottom: 1px dashed #f1f5f9;
+  border-bottom: 1px dashed color-mix(in srgb, var(--tech-blue) 16%, transparent);
 
   span {
-    color: #6b7280;
+    color: var(--tech-text-dim);
   }
 
   b {
-    color: #111827;
-  }
-}
-
-.info-grid {
-  max-height: 420px;
-  overflow: auto;
-  border: 1px solid #eef2f7;
-  border-radius: 6px;
-}
-
-.info-item {
-  display: flex;
-  font-size: 12px;
-  border-bottom: 1px solid #f8fafc;
-
-  .key {
-    width: 260px;
-    padding: 6px 10px;
-    color: #64748b;
-    background: #f8fafc;
-    flex-shrink: 0;
-    word-break: break-all;
-  }
-
-  .value {
-    padding: 6px 10px;
-    color: #111827;
+    color: var(--tech-text);
+    font-weight: 500;
+    text-align: right;
     word-break: break-all;
   }
 }

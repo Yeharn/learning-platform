@@ -1,0 +1,32 @@
+# @Author: Yeharn
+# @Date:2026-11-05
+# @Version: 1.0.0
+# @Description: 注册中心主配置（Spring Cloud Netflix Eureka Server，端口 8849）
+
+server:
+  port: ${LP_REGISTRY_PORT:8849}
+
+spring:
+  application:
+    name: lp-registry
+  # 环境由 Maven profile 打包时注入：mvn package -P dev|test|prod
+  profiles:
+    active: @profiles.active@
+  freemarker:
+    template-loader-path: classpath:/templates/
+    prefer-file-system-access: false
+
+eureka:
+  instance:
+    hostname: ${LP_REGISTRY_HOST:127.0.0.1}
+  client:
+    # 单机模式：不向自己注册、不从自己拉取注册表
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+
+logging:
+  level:
+    root: info
+    org.yeharn.lp.registry: info

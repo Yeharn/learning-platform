@@ -6,7 +6,15 @@
 -->
 
 <template>
-  <div class="app-container">
+  <div class="tech-page">
+    <div class="tech-header">
+      <div class="tech-title">
+        <span class="tech-pulse" />
+        <span>操作日志</span>
+        <small>OPERATION AUDIT</small>
+      </div>
+    </div>
+
     <el-form :inline="true" :model="query" class="search-form">
       <el-form-item label="模块">
         <el-input v-model="query.title" placeholder="请输入模块标题" clearable @keyup.enter="getList" />
@@ -106,7 +114,7 @@
       />
     </div>
 
-    <el-drawer v-model="drawer" title="操作日志详情" size="560px">
+    <el-drawer v-model="drawer" title="操作日志详情" size="560px" append-to-body>
       <el-descriptions :column="1" border>
         <el-descriptions-item label="模块">{{ detail.title }}</el-descriptions-item>
         <el-descriptions-item label="操作人">{{ detail.operName }}</el-descriptions-item>
@@ -239,6 +247,7 @@ onMounted(() => {
   overflow: auto;
 }
 .error {
-  color: #dc2626;
+  color: var(--lp-danger);
+  word-break: break-all;
 }
 </style>

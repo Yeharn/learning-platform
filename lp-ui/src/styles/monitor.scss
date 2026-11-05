@@ -1,0 +1,615 @@
+/*
+ * @Author: Yeharn
+ * @Date:2026-11-05
+ * @Version: 1.0.0
+ * @Description: 监控中心科技风视觉：深空渐变、网格光效、霓虹卡片与数据可视化样式
+ */
+
+.tech-page {
+  position: relative;
+  min-height: calc(100vh - 56px);
+  padding: var(--lp-space);
+  color: var(--tech-text);
+  background:
+    radial-gradient(1200px 600px at 15% -10%, color-mix(in srgb, var(--tech-blue) 22%, transparent), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, color-mix(in srgb, var(--tech-cyan) 14%, transparent), transparent 55%),
+    linear-gradient(160deg, var(--tech-bg-from), var(--tech-bg-to) 70%);
+  overflow: hidden;
+
+  // 网格背景
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(var(--tech-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--tech-grid) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 78%);
+    pointer-events: none;
+  }
+
+  // 扫描光带
+  &::after {
+    content: '';
+    position: absolute;
+    left: -20%;
+    top: -60%;
+    width: 140%;
+    height: 60%;
+    background: linear-gradient(
+      180deg,
+      transparent,
+      color-mix(in srgb, var(--tech-cyan) 8%, transparent),
+      transparent
+    );
+    animation: tech-scan 9s linear infinite;
+    pointer-events: none;
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+@keyframes tech-scan {
+  0% {
+    transform: translateY(0) rotate(-6deg);
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(320%) rotate(-6deg);
+    opacity: 0;
+  }
+}
+
+/* 顶部标题栏 */
+.tech-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: var(--lp-space);
+
+  .tech-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #fff;
+    text-shadow: 0 0 18px color-mix(in srgb, var(--tech-cyan) 55%, transparent);
+
+    .tech-pulse {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--tech-cyan);
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--tech-cyan) 70%, transparent);
+      animation: tech-pulse 1.8s ease-out infinite;
+    }
+
+    small {
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 0;
+      color: var(--tech-text-dim);
+      text-shadow: none;
+    }
+  }
+
+  .tech-tools {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+}
+
+@keyframes tech-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--tech-cyan) 65%, transparent);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px transparent;
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+/* 指标卡：大号霓虹数字 */
+.tech-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--lp-space-sm);
+  margin-bottom: var(--lp-space);
+}
+
+.tech-metric {
+  position: relative;
+  padding: 16px 18px;
+  border-radius: var(--lp-radius);
+  background: var(--tech-card-bg);
+  border: 1px solid var(--tech-card-border);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 30px rgba(0, 8, 24, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: -30px;
+    top: -30px;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--tech-blue) 40%, transparent), transparent 70%);
+    opacity: 0.6;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--tech-cyan) 45%, transparent);
+    box-shadow: 0 14px 38px rgba(0, 8, 24, 0.55), 0 0 0 1px color-mix(in srgb, var(--tech-cyan) 25%, transparent);
+  }
+
+  .metric-label {
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--tech-text-dim);
+    text-transform: uppercase;
+  }
+
+  .metric-value {
+    margin-top: 6px;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.1;
+    font-family: 'DIN Alternate', 'Bahnschrift', Consolas, monospace;
+    color: #fff;
+    text-shadow: 0 0 16px color-mix(in srgb, var(--tech-cyan) 45%, transparent);
+
+    small {
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--tech-text-dim);
+      margin-left: 4px;
+      text-shadow: none;
+    }
+  }
+
+  .metric-sub {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--tech-text-dim);
+  }
+
+  &.is-warn .metric-value {
+    color: var(--lp-warning);
+    text-shadow: 0 0 16px color-mix(in srgb, var(--lp-warning) 45%, transparent);
+  }
+
+  &.is-danger .metric-value {
+    color: var(--lp-danger);
+    text-shadow: 0 0 16px color-mix(in srgb, var(--lp-danger) 45%, transparent);
+  }
+}
+
+/* 通用面板：替代 el-card 的科技卡片（页面仍可用 el-card，样式会被统一改造） */
+.tech-grid {
+  display: grid;
+  gap: var(--lp-space);
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.tech-kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  padding: 7px 0;
+  border-bottom: 1px dashed color-mix(in srgb, var(--tech-blue) 16%, transparent);
+
+  span {
+    color: var(--tech-text-dim);
+    flex-shrink: 0;
+  }
+
+  b {
+    color: var(--tech-text);
+    font-weight: 500;
+    text-align: right;
+    word-break: break-all;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+/* 仪表盘容器 */
+.tech-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+
+  .el-progress__text {
+    color: var(--tech-text) !important;
+
+    i {
+      font-size: 20px !important;
+      font-weight: 700;
+      font-style: normal;
+      text-shadow: 0 0 14px color-mix(in srgb, var(--tech-cyan) 50%, transparent);
+    }
+  }
+}
+
+/* ============================================================
+ * tech-page 内 Element Plus 组件暗色适配
+ * ============================================================ */
+.tech-page {
+  .el-card {
+    background: var(--tech-card-bg);
+    border: 1px solid var(--tech-card-border);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 10px 30px rgba(0, 8, 24, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    color: var(--tech-text);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: var(--lp-space);
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--tech-cyan), var(--tech-blue), transparent);
+      opacity: 0.8;
+    }
+
+    .el-card__header {
+      border-bottom: 1px solid color-mix(in srgb, var(--tech-blue) 14%, transparent);
+      color: #fff;
+      font-size: 13.5px;
+      letter-spacing: 0.5px;
+      background: color-mix(in srgb, var(--tech-blue) 6%, transparent);
+    }
+
+    .el-card__body {
+      color: var(--tech-text);
+    }
+  }
+
+  .el-table {
+    --el-table-bg-color: transparent;
+    --el-table-tr-bg-color: transparent;
+    --el-table-header-bg-color: color-mix(in srgb, var(--tech-blue) 8%, transparent);
+    --el-table-border-color: color-mix(in srgb, var(--tech-blue) 14%, transparent);
+    --el-table-row-hover-bg-color: color-mix(in srgb, var(--tech-blue) 12%, transparent);
+    --el-table-text-color: var(--tech-text);
+    --el-table-header-text-color: var(--tech-text-dim);
+    color: var(--tech-text);
+
+    th.el-table__cell {
+      color: var(--tech-text-dim);
+      background: color-mix(in srgb, var(--tech-blue) 8%, transparent);
+    }
+
+    .el-table__empty-text {
+      color: var(--tech-text-dim);
+    }
+
+    .el-table__inner-wrapper::before {
+      background-color: color-mix(in srgb, var(--tech-blue) 14%, transparent);
+    }
+  }
+
+  .el-descriptions {
+    --el-descriptions-item-bordered-label-background: color-mix(in srgb, var(--tech-blue) 8%, transparent);
+    --el-descriptions-border-color: color-mix(in srgb, var(--tech-blue) 14%, transparent);
+    color: var(--tech-text);
+
+    .el-descriptions__label {
+      color: var(--tech-text-dim);
+    }
+
+    .el-descriptions__content {
+      color: var(--tech-text);
+    }
+
+    .el-descriptions__body {
+      background: transparent;
+    }
+
+    .el-descriptions__cell {
+      border-color: color-mix(in srgb, var(--tech-blue) 14%, transparent) !important;
+    }
+  }
+
+  .el-progress-bar__outer {
+    background: color-mix(in srgb, var(--tech-blue) 12%, transparent);
+  }
+
+  .el-progress__text {
+    color: var(--tech-text);
+  }
+
+  .el-input__wrapper,
+  .el-select__wrapper,
+  .el-textarea__inner {
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--tech-blue) 20%, transparent) inset;
+    color: var(--tech-text);
+
+    .el-input__inner,
+    .el-select__placeholder {
+      color: var(--tech-text);
+
+      &::placeholder {
+        color: var(--tech-text-dim);
+      }
+    }
+  }
+
+  .el-input__inner {
+    color: var(--tech-text);
+  }
+
+  .el-form-item__label {
+    color: var(--tech-text-dim);
+  }
+
+  .el-button:not(.el-button--primary):not(.el-button--danger):not(.el-button--success) {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: color-mix(in srgb, var(--tech-blue) 22%, transparent);
+    color: var(--tech-text);
+
+    &:hover {
+      background: color-mix(in srgb, var(--tech-blue) 18%, transparent);
+      border-color: color-mix(in srgb, var(--tech-cyan) 45%, transparent);
+      color: #fff;
+    }
+  }
+
+  .el-pagination {
+    --el-pagination-bg-color: transparent;
+    --el-pagination-text-color: var(--tech-text-dim);
+    --el-pagination-button-color: var(--tech-text-dim);
+
+    &.is-background .el-pager li,
+    &.is-background .btn-prev,
+    &.is-background .btn-next {
+      background: color-mix(in srgb, var(--tech-blue) 10%, transparent);
+      color: var(--tech-text-dim);
+    }
+
+    &.is-background .el-pager li.is-active {
+      background: color-mix(in srgb, var(--tech-cyan) 80%, transparent);
+      color: #04121f;
+    }
+  }
+
+  .el-tag {
+    border-color: color-mix(in srgb, var(--tech-blue) 30%, transparent);
+  }
+
+  .el-switch__label {
+    color: var(--tech-text-dim);
+  }
+
+  .el-empty__description p {
+    color: var(--tech-text-dim);
+  }
+
+  .el-divider {
+    border-color: color-mix(in srgb, var(--tech-blue) 14%, transparent);
+  }
+
+  .text-muted,
+  .page-title {
+    color: var(--tech-text-dim);
+  }
+
+  .page-title::before {
+    background: linear-gradient(var(--tech-cyan), var(--tech-blue));
+  }
+
+  // 列表类监控页沿用全局 search-form / table-card 骨架，此处切换为科技深色
+  .search-form,
+  .table-card {
+    background: var(--tech-card-bg);
+    border: 1px solid var(--tech-card-border);
+    box-shadow: 0 10px 30px rgba(0, 8, 24, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    color: var(--tech-text);
+  }
+
+  .search-form .el-form-item {
+    margin-bottom: 14px;
+  }
+
+  .table-card .page-title {
+    color: var(--tech-text);
+  }
+
+  .el-message-box {
+    background: #16203a;
+    border: 1px solid var(--tech-card-border);
+  }
+}
+
+/* 折叠面板（展开查看）科幻化 */
+.tech-collapse {
+  .el-collapse-item__header {
+    height: 44px;
+    padding: 0 14px;
+    margin-top: 10px;
+    border-radius: var(--lp-radius-sm);
+    border: 1px solid color-mix(in srgb, var(--tech-blue) 22%, transparent);
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--tech-blue) 16%, transparent),
+      transparent 70%
+    );
+    transition: border-color 0.2s ease, background 0.2s ease;
+
+    &:hover {
+      border-color: color-mix(in srgb, var(--tech-cyan) 50%, transparent);
+    }
+
+    .tech-collapse-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 13px;
+      letter-spacing: 1px;
+      color: #fff;
+
+      .led {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--tech-cyan);
+        box-shadow: 0 0 8px color-mix(in srgb, var(--tech-cyan) 80%, transparent);
+        animation: tech-pulse 1.8s ease-out infinite;
+      }
+
+      small {
+        font-size: 11px;
+        letter-spacing: 2px;
+        color: var(--tech-text-dim);
+        font-family: 'Bahnschrift', Consolas, monospace;
+      }
+    }
+  }
+
+  .el-collapse {
+    border: none;
+  }
+
+  .el-collapse-item__wrap {
+    background: transparent;
+    border: none;
+  }
+
+  .el-collapse-item__content {
+    padding: 14px 2px 4px;
+    color: var(--tech-text);
+  }
+}
+
+/* 原始键值数据网格（完整 INFO / 全局状态）科幻化 */
+.tech-info-grid {
+  max-height: 420px;
+  overflow: auto;
+  border: 1px solid color-mix(in srgb, var(--tech-blue) 20%, transparent);
+  border-radius: var(--lp-radius-sm);
+  background: color-mix(in srgb, var(--tech-blue) 4%, transparent);
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--tech-cyan) 45%, transparent) transparent;
+
+  .tech-info-item {
+    display: flex;
+    font-size: 12px;
+    font-family: 'Bahnschrift', Consolas, 'Courier New', monospace;
+    border-bottom: 1px solid color-mix(in srgb, var(--tech-blue) 12%, transparent);
+    transition: background 0.15s ease;
+
+    &:nth-child(odd) {
+      background: color-mix(in srgb, var(--tech-blue) 6%, transparent);
+    }
+
+    &:hover {
+      background: color-mix(in srgb, var(--tech-cyan) 12%, transparent);
+
+      .key {
+        color: var(--tech-cyan);
+        text-shadow: 0 0 8px color-mix(in srgb, var(--tech-cyan) 60%, transparent);
+      }
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .key {
+      width: 280px;
+      padding: 6px 12px;
+      color: var(--tech-text-dim);
+      background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--tech-blue) 14%, transparent),
+        color-mix(in srgb, var(--tech-blue) 4%, transparent)
+      );
+      border-right: 1px solid color-mix(in srgb, var(--tech-cyan) 22%, transparent);
+      flex-shrink: 0;
+      word-break: break-all;
+      transition: color 0.15s ease, text-shadow 0.15s ease;
+    }
+
+    .value {
+      padding: 6px 12px;
+      color: var(--tech-text);
+      word-break: break-all;
+    }
+  }
+}
+
+@media (max-width: 992px) {
+  .tech-info-grid .tech-info-item .key {
+    width: 150px;
+  }
+}
+
+/* 响应式 */
+@media (max-width: 1200px) {
+  .tech-metrics {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+}
+
+@media (max-width: 992px) {
+  .tech-page {
+    padding: 10px;
+  }
+
+  .tech-header .tech-title {
+    font-size: 16px;
+  }
+
+  .tech-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tech-page .el-card__body {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .tech-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tech-metric {
+    padding: 12px 14px;
+
+    .metric-value {
+      font-size: 20px;
+    }
+  }
+}

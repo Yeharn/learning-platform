@@ -6,53 +6,43 @@
 -->
 
 <template>
-  <div class="app-container">
-    <div class="flex-between mb8">
-      <span class="page-title">MySQL 监控</span>
-      <el-button icon="Refresh" :loading="loading" @click="load">刷新</el-button>
+  <div class="tech-page">
+    <div class="tech-header">
+      <div class="tech-title">
+        <span class="tech-pulse" />
+        <span>MySQL 监控</span>
+        <small>DATABASE INSIGHT</small>
+      </div>
+      <div class="tech-tools">
+        <el-button icon="Refresh" :loading="loading" @click="load">刷新</el-button>
+      </div>
+    </div>
+
+    <div class="tech-metrics">
+      <div class="tech-metric">
+        <div class="metric-label">平均 QPS</div>
+        <div class="metric-value">{{ info.basic?.qps ?? 0 }}</div>
+        <div class="metric-sub">累计查询 {{ info.basic?.questions ?? '-' }}</div>
+      </div>
+      <div class="tech-metric">
+        <div class="metric-label">当前连接</div>
+        <div class="metric-value">{{ info.basic?.threadsConnected ?? 0 }}</div>
+        <div class="metric-sub">连接使用率 {{ info.basic?.connectionUsage ?? 0 }}%</div>
+      </div>
+      <div class="tech-metric" :class="Number(info.basic?.slowQueries || 0) > 0 ? 'is-warn' : ''">
+        <div class="metric-label">慢查询</div>
+        <div class="metric-value">{{ info.basic?.slowQueries ?? 0 }}</div>
+        <div class="metric-sub">阈值 {{ threshold }} 秒</div>
+      </div>
+      <div class="tech-metric">
+        <div class="metric-label">运行天数</div>
+        <div class="metric-value">{{ days(info.basic?.uptime) }}<small>天</small></div>
+        <div class="metric-sub">版本 {{ info.basic?.version || '-' }}</div>
+      </div>
     </div>
 
     <el-row :gutter="16">
-      <el-col :xs="12" :md="6">
-        <div class="stat-card" style="background: linear-gradient(135deg, #0369a1, #38bdf8)">
-          <div>
-            <div class="stat-value">{{ info.basic?.qps ?? 0 }}</div>
-            <div class="stat-label">平均 QPS</div>
-          </div>
-          <el-icon class="stat-icon"><Odometer /></el-icon>
-        </div>
-      </el-col>
-      <el-col :xs="12" :md="6">
-        <div class="stat-card" style="background: linear-gradient(135deg, #15803d, #4ade80)">
-          <div>
-            <div class="stat-value">{{ info.basic?.threadsConnected ?? 0 }}</div>
-            <div class="stat-label">当前连接</div>
-          </div>
-          <el-icon class="stat-icon"><Connection /></el-icon>
-        </div>
-      </el-col>
-      <el-col :xs="12" :md="6">
-        <div class="stat-card" style="background: linear-gradient(135deg, #b45309, #fbbf24)">
-          <div>
-            <div class="stat-value">{{ info.basic?.slowQueries ?? 0 }}</div>
-            <div class="stat-label">慢查询</div>
-          </div>
-          <el-icon class="stat-icon"><Timer /></el-icon>
-        </div>
-      </el-col>
-      <el-col :xs="12" :md="6">
-        <div class="stat-card" style="background: linear-gradient(135deg, #6d28d9, #a78bfa)">
-          <div>
-            <div class="stat-value">{{ days(info.basic?.uptime) }}</div>
-            <div class="stat-label">运行天数</div>
-          </div>
-          <el-icon class="stat-icon"><Clock /></el-icon>
-        </div>
-      </el-col>
-    </el-row>
-
-    <el-row :gutter="16" class="mt16">
-      <el-col :xs="24" :md="12">
+      <el-col :xs="24" :lg="12">
         <el-card shadow="never">
           <template #header>基础信息</template>
           <el-descriptions :column="1" border>
@@ -69,7 +59,7 @@
         </el-card>
       </el-col>
 
-      <el-col :xs="24" :md="12">
+      <el-col :xs="24" :lg="12">
         <el-card shadow="never">
           <template #header>连接池 (HikariCP)</template>
           <el-descriptions :column="2" border>
@@ -80,20 +70,24 @@
             <el-descriptions-item label="等待线程">{{ info.pool?.waiting ?? '-' }}</el-descriptions-item>
             <el-descriptions-item label="池名称">{{ info.pool?.poolName ?? '-' }}</el-descriptions-item>
           </el-descriptions>
-
-          <div class="mt16">
-            <div class="page-title">表空间 Top 10</div>
-            <el-table :data="info.topTables || []" size="small" border>
-              <el-table-column prop="name" label="表名" min-width="140" />
-              <el-table-column prop="rowsCount" label="行数" width="90" />
-              <el-table-column prop="sizeKb" label="大小(KB)" width="100" />
-            </el-table>
-          </div>
         </el-card>
       </el-col>
     </el-row>
 
-    <el-row :gutter="16" class="mt16">
+    <el-row :gutter="16">
+      <el-col :xs="24">
+        <el-card shadow="never">
+          <template #header>表空间 Top 10</template>
+          <el-table :data="info.topTables || []" size="small" border max-height="300">
+            <el-table-column prop="name" label="表名" min-width="180" />
+            <el-table-column prop="rowsCount" label="行数" width="120" />
+            <el-table-column prop="sizeKb" label="大小(KB)" width="130" />
+          </el-table>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <el-row :gutter="16">
       <el-col :xs="24" :md="10">
         <el-card shadow="never">
           <template #header>数据库大小</template>
@@ -178,10 +172,17 @@
 
     <el-card shadow="never" class="mt16">
       <template #header>全局状态</template>
-      <el-collapse>
-        <el-collapse-item title="展开查看" name="status">
-          <div class="status-grid">
-            <div v-for="(value, key) in info.status || {}" :key="key" class="status-item">
+      <el-collapse class="tech-collapse">
+        <el-collapse-item name="status">
+          <template #title>
+            <span class="tech-collapse-label">
+              <i class="led" />
+              <span>展开查看</span>
+              <small>RAW DATA STREAM</small>
+            </span>
+          </template>
+          <div class="tech-info-grid">
+            <div v-for="(value, key) in info.status || {}" :key="key" class="tech-info-item">
               <span class="key">{{ key }}</span><span class="value">{{ value }}</span>
             </div>
           </div>
@@ -260,30 +261,5 @@ onMounted(() => {
 <style scoped lang="scss">
 .mt16 {
   margin-top: 16px;
-}
-
-.status-grid {
-  max-height: 420px;
-  overflow: auto;
-}
-
-.status-item {
-  display: flex;
-  font-size: 12px;
-  border-bottom: 1px solid #f8fafc;
-
-  .key {
-    width: 280px;
-    padding: 5px 10px;
-    color: #64748b;
-    background: #f8fafc;
-    flex-shrink: 0;
-  }
-
-  .value {
-    padding: 5px 10px;
-    color: #111827;
-    word-break: break-all;
-  }
 }
 </style>

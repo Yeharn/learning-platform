@@ -1,0 +1,17 @@
+# @Author: Yeharn
+# @Date:2026-11-05
+# @Version: 1.0.0
+# @Description: 注册中心 prod 环境配置：开启自我保护，网络抖动时不误剔除健康实例
+
+eureka:
+  server:
+    # 生产环境开启自我保护（默认行为）：大量实例心跳缺失时暂停剔除，防止网络分区误杀
+    enable-self-preservation: true
+    # 每 30s 执行一次过期实例剔除（默认周期）
+    eviction-interval-timer-in-ms: 30000
+    wait-time-in-ms-when-sync-empty: 0
+
+logging:
+  level:
+    root: warn
+    org.yeharn.lp.registry: info

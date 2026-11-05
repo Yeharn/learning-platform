@@ -6,22 +6,29 @@
 -->
 
 <template>
-  <div class="app-container">
+  <div class="tech-page">
+    <div class="tech-header">
+      <div class="tech-title">
+        <span class="tech-pulse" />
+        <span>在线用户</span>
+        <small>ONLINE SESSIONS</small>
+      </div>
+      <div class="tech-tools">
+        <el-tag type="success" effect="dark">当前在线 {{ onlineStore.count }} 人</el-tag>
+      </div>
+    </div>
+
     <el-form :inline="true" class="search-form">
       <el-form-item label="用户名">
         <el-input v-model="query.username" placeholder="请输入用户名" clearable @keyup.enter="handleSearch" />
       </el-form-item>
-      <el-form-item>
+      <el-form-item class="search-actions">
         <el-button type="primary" icon="Search" @click="handleSearch">搜索</el-button>
         <el-button icon="Refresh" @click="load">刷新</el-button>
       </el-form-item>
     </el-form>
 
     <div class="table-card">
-      <div class="flex-between mb8">
-        <span class="page-title">在线用户</span>
-        <el-tag type="success" effect="light">当前在线 {{ onlineStore.count }} 人</el-tag>
-      </div>
 
       <el-table v-loading="loading" :data="list" border>
         <el-table-column prop="username" label="账号" width="120" />

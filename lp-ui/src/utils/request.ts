@@ -16,6 +16,44 @@ const service = axios.create({
 
 let relogining = false
 
+/** 请求路径 → 目标服务名称（用于后端不可达时的友好提示） */
+const SERVICE_ROUTES: Array<[RegExp, string]> = [
+  [/^\/(auth|system|message|notice|workbench)/, '系统服务（lp-system）'],
+  [/^\/monitor/, '监控服务（lp-monitor）'],
+  [/^\/file/, '文件服务（lp-file）'],
+  [/^\/flow/, '流程服务（lp-flow）']
+]
+
+function resolveServiceName(url?: string): string {
+  const path = (url || '').replace(import.meta.env.VITE_APP_BASE_API, '')
+  for (const [pattern, name] of SERVICE_ROUTES) {
+    if (pattern.test(path)) return name
+  }
+  return '后端服务'
+}
+
+/** 后端不可达判定：连接拒绝/断网、网关 5xx、开发代理转发失败（500 + 非业务 JSON） */
+function isBackendDown(error: any): boolean {
+  const status = error.response?.status
+  if (!error.response) {
+    return error.code !== 'ECONNABORTED'
+  }
+  if (status === 502 || status === 503 || status === 504) {
+    return true
+  }
+  return status === 500 && typeof error.response.data === 'string'
+}
+
+/** 网络类错误提示去重：并发请求失败时 3 秒内只弹一次 */
+let lastNetTipAt = 0
+function tipBackendDown(error: any) {
+  const now = Date.now()
+  if (now - lastNetTipAt < 3000) return
+  lastNetTipAt = now
+  const name = resolveServiceName(error.config?.url)
+  ElMessage.error(`${name}未启动或不可达，请检查后端服务`)
+}
+
 service.interceptors.request.use((config) => {
   const token = getToken()
   if (token) {
@@ -45,6 +83,16 @@ service.interceptors.response.use(
     const status = error.response?.status
     if (status === 401) {
       handleUnauthorized()
+      return Promise.reject(error)
+    }
+    // 后端未启动 / 不可达：友好提示，不弹原始错误码
+    if (isBackendDown(error)) {
+      tipBackendDown(error)
+      return Promise.reject(error)
+    }
+    // 请求超时
+    if (error.code === 'ECONNABORTED') {
+      ElMessage.error('请求超时，请稍后重试')
       return Promise.reject(error)
     }
     const msg = error.response?.data?.msg || error.message || '网络异常'
