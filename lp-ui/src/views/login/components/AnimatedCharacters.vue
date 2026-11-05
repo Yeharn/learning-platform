@@ -1,0 +1,760 @@
+<!--
+  @Author: Yeharn
+  @Date:2026-11-04
+  @Version: 1.0.0
+  @Description: 登录页卡通角色动画组件
+-->
+
+<template>
+  <div class="animated-characters-container">
+    <div v-if="showConfetti" class="confetti-container">
+      <div v-for="(style, i) in confettiStyles" :key="i" class="confetti-piece" :style="style" />
+    </div>
+
+    <!-- 紫色高个角色 -->
+    <div
+      ref="purpleRef"
+      class="character purple-character"
+      :class="{ 'entrance-complete': hasEntered }"
+      :style="{
+        left: '70px',
+        width: '180px',
+        height: isTyping || isHidingPassword ? '440px' : '400px',
+        backgroundColor: '#6C3FF5',
+        zIndex: 1,
+        transform: hasEntered
+          ? passwordLength > 0 && showPassword
+            ? 'skewX(0deg)'
+            : isTyping || isHidingPassword
+              ? `skewX(${(purplePos.bodySkew || 0) - 12}deg) translateX(40px)`
+              : `skewX(${purplePos.bodySkew || 0}deg)`
+          : undefined
+      }"
+    >
+      <div
+        class="eyes"
+        :style="{
+          left: passwordLength > 0 && showPassword ? '50px' : isLookingAtEachOther ? '85px' : `${75 + purplePos.faceX}px`,
+          top: passwordLength > 0 && showPassword ? '20px' : isLookingAtEachOther ? '50px' : `${25 + purplePos.faceY}px`
+        }"
+      >
+        <EyeBall
+          :size="18"
+          :pupil-size="7"
+          :max-distance="5"
+          eye-color="white"
+          pupil-color="#2D2D2D"
+          :is-blinking="isPurpleBlinking"
+          :force-look-x="
+            loginSuccess
+              ? 0
+              : passwordLength > 0 && showPassword
+                ? isPurplePeeking
+                  ? 4
+                  : -4
+                : isLookingAtEachOther
+                  ? 3
+                  : undefined
+          "
+          :force-look-y="
+            loginSuccess
+              ? successLookY
+              : passwordLength > 0 && showPassword
+                ? isPurplePeeking
+                  ? 5
+                  : -4
+                : isLookingAtEachOther
+                  ? 4
+                  : undefined
+          "
+        />
+        <EyeBall
+          :size="18"
+          :pupil-size="7"
+          :max-distance="5"
+          eye-color="white"
+          pupil-color="#2D2D2D"
+          :is-blinking="isPurpleBlinking"
+          :force-look-x="
+            loginSuccess
+              ? 0
+              : passwordLength > 0 && showPassword
+                ? isPurplePeeking
+                  ? 4
+                  : -4
+                : isLookingAtEachOther
+                  ? 3
+                  : undefined
+          "
+          :force-look-y="
+            loginSuccess
+              ? successLookY
+              : passwordLength > 0 && showPassword
+                ? isPurplePeeking
+                  ? 5
+                  : -4
+                : isLookingAtEachOther
+                  ? 4
+                  : undefined
+          "
+        />
+      </div>
+      <div
+        class="purple-mouth-shape"
+        :class="{
+          'purple-mouth-shape--typing': (isTyping || isHidingPassword) && !loginFailed && !loginSuccess,
+          'purple-mouth-shape--sad': loginFailed,
+          'purple-mouth-shape--happy': loginSuccess
+        }"
+        :style="{
+          left: passwordLength > 0 && showPassword ? '72px' : isLookingAtEachOther ? '106px' : `${97 + purplePos.faceX}px`,
+          top: passwordLength > 0 && showPassword ? '57px' : isLookingAtEachOther ? '82px' : `${57 + purplePos.faceY}px`,
+          '--counter-skew': isTyping || isHidingPassword ? `skewX(${-((purplePos.bodySkew || 0) - 12)}deg)` : 'skewX(0deg)'
+        }"
+      />
+    </div>
+
+    <!-- 黑色角色 -->
+    <div
+      ref="blackRef"
+      class="character black-character"
+      :class="{ 'entrance-complete': hasEntered }"
+      :style="{
+        left: '240px',
+        width: '120px',
+        height: '310px',
+        backgroundColor: '#2D2D2D',
+        zIndex: 2,
+        transform: hasEntered
+          ? passwordLength > 0 && showPassword
+            ? 'skewX(0deg)'
+            : isLookingAtEachOther
+              ? `skewX(${(blackPos.bodySkew || 0) * 1.5 + 10}deg) translateX(20px)`
+              : isTyping || isHidingPassword
+                ? `skewX(${(blackPos.bodySkew || 0) * 1.5}deg)`
+                : `skewX(${blackPos.bodySkew || 0}deg)`
+          : undefined
+      }"
+    >
+      <div
+        class="eyes"
+        :style="{
+          left: passwordLength > 0 && showPassword ? '10px' : isLookingAtEachOther ? '32px' : `${26 + blackPos.faceX}px`,
+          top: passwordLength > 0 && showPassword ? '28px' : isLookingAtEachOther ? '12px' : `${32 + blackPos.faceY}px`
+        }"
+      >
+        <EyeBall
+          :size="16"
+          :pupil-size="6"
+          :max-distance="4"
+          eye-color="white"
+          pupil-color="#2D2D2D"
+          :is-blinking="isBlackBlinking"
+          :is-sad="loginFailed"
+          :sad-rotate="-20"
+          :force-look-x="loginSuccess ? 0 : passwordLength > 0 && showPassword ? -4 : isLookingAtEachOther ? 0 : undefined"
+          :force-look-y="loginSuccess ? successLookY : passwordLength > 0 && showPassword ? -4 : isLookingAtEachOther ? -4 : undefined"
+        />
+        <EyeBall
+          :size="16"
+          :pupil-size="6"
+          :max-distance="4"
+          eye-color="white"
+          pupil-color="#2D2D2D"
+          :is-blinking="isBlackBlinking"
+          :is-sad="loginFailed"
+          :sad-rotate="20"
+          :force-look-x="loginSuccess ? 0 : passwordLength > 0 && showPassword ? -4 : isLookingAtEachOther ? 0 : undefined"
+          :force-look-y="loginSuccess ? successLookY : passwordLength > 0 && showPassword ? -4 : isLookingAtEachOther ? -4 : undefined"
+        />
+      </div>
+    </div>
+
+    <!-- 橙色半圆角色 -->
+    <div
+      ref="orangeRef"
+      class="character orange-character"
+      :class="{ 'entrance-complete': hasEntered }"
+      :style="{
+        left: '0px',
+        width: '240px',
+        height: '150px',
+        zIndex: 3,
+        backgroundColor: '#FF9B6B',
+        borderRadius: '120px 120px 0 0',
+        transform: hasEntered ? (passwordLength > 0 && showPassword ? 'skewX(0deg)' : `skewX(${orangePos.bodySkew || 0}deg)`) : undefined
+      }"
+    >
+      <div
+        class="eyes"
+        :style="{
+          left: passwordLength > 0 && showPassword ? '80px' : `${112 + orangePos.faceX}px`,
+          top: passwordLength > 0 && showPassword ? '55px' : `${60 + orangePos.faceY}px`
+        }"
+      >
+        <Pupil
+          :size="12"
+          :max-distance="5"
+          pupil-color="#2D2D2D"
+          :is-blinking="isOrangeBlinking"
+          :force-look-x="loginSuccess ? 0 : passwordLength > 0 && showPassword ? -5 : undefined"
+          :force-look-y="loginSuccess ? successLookY : passwordLength > 0 && showPassword ? -4 : undefined"
+        />
+        <Pupil
+          :size="12"
+          :max-distance="5"
+          pupil-color="#2D2D2D"
+          :is-blinking="isOrangeBlinking"
+          :force-look-x="loginSuccess ? 0 : passwordLength > 0 && showPassword ? -5 : undefined"
+          :force-look-y="loginSuccess ? successLookY : passwordLength > 0 && showPassword ? -4 : undefined"
+        />
+      </div>
+      <div
+        class="orange-mouth-shape"
+        :class="{
+          'orange-mouth-shape--typing': (isTyping || isHidingPassword) && !loginFailed && !loginSuccess,
+          'orange-mouth-shape--sad': loginFailed,
+          'orange-mouth-shape--happy': loginSuccess
+        }"
+        :style="{
+          left: passwordLength > 0 && showPassword ? '94px' : `${126 + orangePos.faceX}px`,
+          top: passwordLength > 0 && showPassword ? '87px' : `${92 + orangePos.faceY}px`
+        }"
+      />
+    </div>
+
+    <!-- 黄色角色 -->
+    <div
+      ref="yellowRef"
+      class="character yellow-character"
+      :class="{ 'entrance-complete': hasEntered }"
+      :style="{
+        left: '310px',
+        width: '140px',
+        height: '230px',
+        backgroundColor: '#E8D754',
+        borderRadius: '70px 70px 0 0',
+        zIndex: 4,
+        transform: hasEntered ? (passwordLength > 0 && showPassword ? 'skewX(0deg)' : `skewX(${yellowPos.bodySkew || 0}deg)`) : undefined
+      }"
+    >
+      <div
+        class="eyes"
+        :style="{
+          left: passwordLength > 0 && showPassword ? '20px' : `${52 + yellowPos.faceX}px`,
+          top: passwordLength > 0 && showPassword ? '35px' : `${40 + yellowPos.faceY}px`
+        }"
+      >
+        <Pupil
+          :size="12"
+          :max-distance="5"
+          pupil-color="#2D2D2D"
+          :is-blinking="isYellowBlinking"
+          :force-look-x="loginSuccess ? 0 : passwordLength > 0 && showPassword ? -5 : undefined"
+          :force-look-y="loginSuccess ? successLookY : passwordLength > 0 && showPassword ? -4 : undefined"
+        />
+        <Pupil
+          :size="12"
+          :max-distance="5"
+          pupil-color="#2D2D2D"
+          :is-blinking="isYellowBlinking"
+          :force-look-x="loginSuccess ? 0 : passwordLength > 0 && showPassword ? -5 : undefined"
+          :force-look-y="loginSuccess ? successLookY : passwordLength > 0 && showPassword ? -4 : undefined"
+        />
+      </div>
+      <div
+        class="yellow-mouth-wrapper"
+        :style="{
+          left: passwordLength > 0 && showPassword ? '10px' : `${40 + yellowPos.faceX}px`,
+          top: passwordLength > 0 && showPassword ? '88px' : `${88 + yellowPos.faceY}px`
+        }"
+      >
+        <svg width="80" height="20" viewBox="0 0 80 20">
+          <path
+            class="yellow-mouth-path"
+            :class="{ 'yellow-mouth-path--wavy': loginFailed, 'yellow-mouth-path--happy': loginSuccess }"
+            stroke="#2D2D2D"
+            stroke-width="3"
+            fill="none"
+            stroke-linecap="round"
+          />
+        </svg>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import EyeBall from './EyeBall.vue'
+import Pupil from './Pupil.vue'
+
+const props = withDefaults(
+  defineProps<{
+    isTyping?: boolean
+    showPassword?: boolean
+    passwordLength?: number
+    loginFailed?: boolean
+    loginSuccess?: boolean
+  }>(),
+  {
+    isTyping: false,
+    showPassword: false,
+    passwordLength: 0,
+    loginFailed: false,
+    loginSuccess: false
+  }
+)
+
+const purpleRef = ref<HTMLElement | null>(null)
+const blackRef = ref<HTMLElement | null>(null)
+const orangeRef = ref<HTMLElement | null>(null)
+const yellowRef = ref<HTMLElement | null>(null)
+
+const hasEntered = ref(false)
+const isPurpleBlinking = ref(false)
+const isBlackBlinking = ref(false)
+const isOrangeBlinking = ref(false)
+const isYellowBlinking = ref(false)
+const isLookingAtEachOther = ref(false)
+const isPurplePeeking = ref(false)
+
+const purplePos = ref({ faceX: 0, faceY: 0, bodySkew: 0 })
+const blackPos = ref({ faceX: 0, faceY: 0, bodySkew: 0 })
+const orangePos = ref({ faceX: 0, faceY: 0, bodySkew: 0 })
+const yellowPos = ref({ faceX: 0, faceY: 0, bodySkew: 0 })
+
+const isHidingPassword = computed(() => props.passwordLength > 0 && !props.showPassword)
+const successLookY = ref(-5)
+
+const confettiColors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#A78BFA', '#FF9B6B', '#6BCB77', '#4D96FF']
+const confettiStyles = ref<any[]>([])
+const showConfetti = ref(false)
+let confettiTimeout: ReturnType<typeof setTimeout> | null = null
+
+function generateConfetti() {
+  confettiStyles.value = Array.from({ length: 160 }, (_, i) => ({
+    left: `${Math.random() * 100}%`,
+    top: `-${10 + Math.random() * 30}%`,
+    backgroundColor: confettiColors[i % confettiColors.length],
+    width: `${4 + Math.random() * 6}px`,
+    height: `${8 + Math.random() * 12}px`,
+    animationDelay: `${Math.random() * 2}s`,
+    animationDuration: `${4.5 + Math.random() * 2}s`,
+    transform: `rotate(${Math.random() * 360}deg)`
+  }))
+  showConfetti.value = true
+  if (confettiTimeout) clearTimeout(confettiTimeout)
+  confettiTimeout = setTimeout(() => {
+    showConfetti.value = false
+    confettiStyles.value = []
+  }, 8000)
+}
+
+let successLookAnimId = 0
+
+function animateSuccessLook() {
+  const startY = -5
+  const endY = 4
+  const duration = 5500
+  const startTime = performance.now()
+  const step = (now: number) => {
+    const progress = Math.min((now - startTime) / duration, 1)
+    const eased = progress < 0.5 ? 4 * progress ** 3 : 1 - Math.pow(-2 * progress + 2, 3) / 2
+    successLookY.value = startY + (endY - startY) * eased
+    if (progress < 1) successLookAnimId = requestAnimationFrame(step)
+  }
+  successLookAnimId = requestAnimationFrame(step)
+}
+
+watch(
+  () => props.loginSuccess,
+  (val) => {
+    if (val) {
+      generateConfetti()
+      successLookY.value = -5
+      if (successLookAnimId) cancelAnimationFrame(successLookAnimId)
+      animateSuccessLook()
+    } else {
+      successLookY.value = -5
+      if (successLookAnimId) cancelAnimationFrame(successLookAnimId)
+    }
+  }
+)
+
+let purpleBlinkTimeout: ReturnType<typeof setTimeout> | null = null
+let blackBlinkTimeout: ReturnType<typeof setTimeout> | null = null
+let orangeBlinkTimeout: ReturnType<typeof setTimeout> | null = null
+let yellowBlinkTimeout: ReturnType<typeof setTimeout> | null = null
+let lookingTimeout: ReturnType<typeof setTimeout> | null = null
+let peekTimeout: ReturnType<typeof setTimeout> | null = null
+let rafId = 0
+
+const characterCenters = ref({
+  purple: { x: 0, y: 0 },
+  black: { x: 0, y: 0 },
+  orange: { x: 0, y: 0 },
+  yellow: { x: 0, y: 0 }
+})
+
+function updateCharacterCenters() {
+  const calc = (el: HTMLElement | null) => {
+    if (!el) return { x: 0, y: 0 }
+    const rect = el.getBoundingClientRect()
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 3 }
+  }
+  characterCenters.value.purple = calc(purpleRef.value)
+  characterCenters.value.black = calc(blackRef.value)
+  characterCenters.value.orange = calc(orangeRef.value)
+  characterCenters.value.yellow = calc(yellowRef.value)
+}
+
+function calculatePosition(
+  centerX: number,
+  centerY: number,
+  mx: number,
+  my: number,
+  rangeX = 15,
+  rangeY = 10,
+  minX: number | null = null,
+  maxX: number | null = null,
+  minY: number | null = null,
+  maxY: number | null = null
+) {
+  const rMinX = minX !== null ? minX : -rangeX
+  const rMaxX = maxX !== null ? maxX : rangeX
+  const rMinY = minY !== null ? minY : -rangeY
+  const rMaxY = maxY !== null ? maxY : rangeY
+  const deltaX = mx - centerX
+  const deltaY = my - centerY
+  const scaleX = Math.max(Math.abs(rMinX), Math.abs(rMaxX))
+  const scaleY = Math.max(Math.abs(rMinY), Math.abs(rMaxY))
+  const faceX = Math.max(rMinX, Math.min(rMaxX, deltaX / (300 / scaleX)))
+  const faceY = Math.max(rMinY, Math.min(rMaxY, deltaY / (300 / scaleY)))
+  const bodySkew = Math.max(-6, Math.min(6, -deltaX / 120))
+  return { faceX, faceY, bodySkew }
+}
+
+let pendingMouseX = 0
+let pendingMouseY = 0
+let needsUpdate = false
+
+function updatePositions() {
+  if (needsUpdate && hasEntered.value) {
+    needsUpdate = false
+    const { purple, black, orange, yellow } = characterCenters.value
+    purplePos.value = calculatePosition(purple.x, purple.y, pendingMouseX, pendingMouseY, 0, 0, -46, 18, -8, 5)
+    blackPos.value = calculatePosition(black.x, black.y, pendingMouseX, pendingMouseY)
+    orangePos.value = calculatePosition(orange.x, orange.y, pendingMouseX, pendingMouseY, 0, 0, -46, 20, -18, 20)
+    yellowPos.value = calculatePosition(yellow.x, yellow.y, pendingMouseX, pendingMouseY)
+  }
+  rafId = requestAnimationFrame(updatePositions)
+}
+
+function handleMouseMove(e: MouseEvent) {
+  pendingMouseX = e.clientX
+  pendingMouseY = e.clientY
+  needsUpdate = true
+}
+
+function scheduleBlink(flag: any) {
+  return setTimeout(() => {
+    flag.value = true
+    setTimeout(() => {
+      flag.value = false
+      scheduleBlink(flag)
+    }, 150)
+  }, Math.random() * 4000 + 3000)
+}
+
+watch(
+  () => props.isTyping,
+  (val) => {
+    if (val) {
+      isLookingAtEachOther.value = true
+      lookingTimeout = setTimeout(() => {
+        isLookingAtEachOther.value = false
+      }, 800)
+    } else {
+      isLookingAtEachOther.value = false
+      if (lookingTimeout) clearTimeout(lookingTimeout)
+    }
+  }
+)
+
+watch(
+  [() => props.passwordLength, () => props.showPassword, isPurplePeeking],
+  ([length, show, peeking]) => {
+    if (length > 0 && show && !peeking) {
+      peekTimeout = setTimeout(() => {
+        isPurplePeeking.value = true
+        setTimeout(() => {
+          isPurplePeeking.value = false
+        }, 800)
+      }, Math.random() * 3000 + 2000)
+    } else if (length === 0 || !show) {
+      isPurplePeeking.value = false
+      if (peekTimeout) clearTimeout(peekTimeout)
+    }
+  }
+)
+
+onMounted(() => {
+  window.addEventListener('mousemove', handleMouseMove, { passive: true })
+  window.addEventListener('resize', updateCharacterCenters, { passive: true })
+  purpleBlinkTimeout = scheduleBlink(isPurpleBlinking)
+  blackBlinkTimeout = scheduleBlink(isBlackBlinking)
+  orangeBlinkTimeout = scheduleBlink(isOrangeBlinking)
+  yellowBlinkTimeout = scheduleBlink(isYellowBlinking)
+
+  setTimeout(() => {
+    hasEntered.value = true
+    updateCharacterCenters()
+    rafId = requestAnimationFrame(updatePositions)
+  }, 1400)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('mousemove', handleMouseMove)
+  window.removeEventListener('resize', updateCharacterCenters)
+  for (const t of [purpleBlinkTimeout, blackBlinkTimeout, orangeBlinkTimeout, yellowBlinkTimeout, lookingTimeout, peekTimeout, confettiTimeout]) {
+    if (t) clearTimeout(t)
+  }
+  if (successLookAnimId) cancelAnimationFrame(successLookAnimId)
+  if (rafId) cancelAnimationFrame(rafId)
+})
+</script>
+
+<style scoped>
+.animated-characters-container {
+  position: relative;
+  width: 450px;
+  height: 400px;
+  transform: scale(0.86);
+  transform-origin: bottom center;
+}
+
+.character {
+  position: absolute;
+  bottom: 0;
+  transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: bottom center;
+  will-change: transform;
+}
+
+.purple-character {
+  animation: purple-entrance 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.black-character {
+  animation: black-entrance 1s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s backwards;
+}
+
+.orange-character {
+  animation: orange-entrance 1.1s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s backwards;
+}
+
+.yellow-character {
+  animation: yellow-entrance 1s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s backwards;
+}
+
+.character.entrance-complete {
+  animation: none;
+}
+
+@keyframes purple-entrance {
+  0% {
+    transform: translateX(-150px) translateY(50px) rotate(-15deg) scale(0.3);
+    opacity: 0;
+  }
+  60% {
+    transform: translateX(10px) translateY(-10px) rotate(3deg) scale(1.05);
+  }
+  100% {
+    transform: translateX(0) translateY(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes black-entrance {
+  0% {
+    transform: translateY(-100px) scale(0.5);
+    opacity: 0;
+  }
+  70% {
+    transform: translateY(10px) scale(1.08);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes orange-entrance {
+  0% {
+    transform: translateX(-200px) translateY(80px) rotate(-25deg) scale(0.2);
+    opacity: 0;
+  }
+  65% {
+    transform: translateX(15px) translateY(-8px) rotate(5deg) scale(1.1);
+  }
+  100% {
+    transform: translateX(0) translateY(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes yellow-entrance {
+  0% {
+    transform: translateX(200px) translateY(60px) rotate(20deg) scale(0.3);
+    opacity: 0;
+  }
+  65% {
+    transform: translateX(-12px) translateY(-5px) rotate(-4deg) scale(1.06);
+  }
+  100% {
+    transform: translateX(0) translateY(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+.eyes {
+  position: absolute;
+  display: flex;
+  transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: left, top;
+}
+
+.purple-character .eyes {
+  gap: 32px;
+}
+
+.black-character .eyes {
+  gap: 24px;
+}
+
+.orange-character .eyes {
+  gap: 32px;
+  transition: all 0.2s cubic-bezier(0, 0, 0.2, 1);
+}
+
+.yellow-character .eyes {
+  gap: 24px;
+  transition: all 0.2s cubic-bezier(0, 0, 0.2, 1);
+}
+
+.purple-mouth-shape {
+  position: absolute;
+  width: 24px;
+  height: 8px;
+  background-color: #2d2d2d;
+  border-radius: 0 0 12px 12px;
+  transition:
+    left 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+    top 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    border-radius 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.purple-mouth-shape--typing {
+  width: 7px;
+  height: 32px;
+  border-radius: 0;
+  transform: translateX(13.5px) translateY(-28px) var(--counter-skew, skewX(0deg));
+}
+
+.orange-mouth-shape {
+  position: absolute;
+  width: 26px;
+  height: 13px;
+  background-color: #2d2d2d;
+  border-radius: 0 0 13px 13px;
+  transition:
+    left 0.2s cubic-bezier(0, 0, 0.2, 1),
+    top 0.2s cubic-bezier(0, 0, 0.2, 1),
+    width 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    border-radius 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.orange-mouth-shape--typing {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  transform: translateX(6px);
+}
+
+.purple-mouth-shape--sad {
+  width: 24px;
+  height: 8px;
+  border-radius: 12px 12px 0 0;
+}
+
+.orange-mouth-shape--sad {
+  width: 26px;
+  height: 13px;
+  border-radius: 13px 13px 0 0;
+}
+
+.yellow-mouth-wrapper {
+  position: absolute;
+  transition: all 0.2s cubic-bezier(0, 0, 0.2, 1);
+}
+
+.yellow-mouth-path {
+  d: path('M0 10 Q10 10, 20 10 Q30 10, 40 10 Q50 10, 60 10 Q70 10, 80 10');
+  transition: d 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.yellow-mouth-path--wavy {
+  d: path('M0 10 Q10 2, 20 10 Q30 18, 40 10 Q50 2, 60 10 Q70 18, 80 10');
+}
+
+.yellow-mouth-path--happy {
+  d: path('M0 2 Q10 10, 20 14 Q30 18, 40 18 Q50 18, 60 14 Q70 10, 80 2');
+}
+
+.purple-mouth-shape--happy {
+  width: 30px;
+  height: 16px;
+  border-radius: 0 0 15px 15px;
+}
+
+.orange-mouth-shape--happy {
+  width: 32px;
+  height: 18px;
+  border-radius: 0 0 16px 16px;
+}
+
+.confetti-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.confetti-piece {
+  position: absolute;
+  border-radius: 2px;
+  animation: confetti-fall linear forwards;
+}
+
+@keyframes confetti-fall {
+  0% {
+    translate: 0 0;
+    opacity: 1;
+  }
+  100% {
+    translate: 30px 200vh;
+    opacity: 1;
+    rotate: 720deg;
+  }
+}
+</style>

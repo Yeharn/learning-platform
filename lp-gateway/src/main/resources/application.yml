@@ -1,0 +1,130 @@
+# @Author: Yeharn
+# @Date:2026-11-04
+# @Version: 1.0.0
+# @Description: 网关主配置：路由转发、Knife4j 聚合、Sa-Token 会话参数
+
+server:
+  port: 8080
+  netty:
+    connection-timeout: 10s
+
+spring:
+  application:
+    name: lp-gateway
+  # 环境由 Maven profile 打包时注入：mvn package -P dev|test|prod
+  profiles:
+    active: @profiles.active@
+  config:
+    import:
+      - optional:nacos:lp-gateway.yaml
+  cloud:
+    nacos:
+      server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+      discovery:
+        namespace: public
+        group: DEFAULT_GROUP
+        metadata:
+          version: 1.0.0
+      config:
+        namespace: public
+        group: DEFAULT_GROUP
+        file-extension: yaml
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+      routes:
+        # Knife4j 聚合文档：剥离服务前缀后转发到各服务的 OpenAPI 描述
+        - id: lp-system-api-docs
+          uri: lb://lp-system
+          predicates:
+            - Path=/lp-system/v3/api-docs
+          filters:
+            - RewritePath=/lp-system/v3/api-docs, /v3/api-docs
+        - id: lp-monitor-api-docs
+          uri: lb://lp-monitor
+          predicates:
+            - Path=/lp-monitor/v3/api-docs
+          filters:
+            - RewritePath=/lp-monitor/v3/api-docs, /v3/api-docs
+        - id: lp-file-api-docs
+          uri: lb://lp-file
+          predicates:
+            - Path=/lp-file/v3/api-docs
+          filters:
+            - RewritePath=/lp-file/v3/api-docs, /v3/api-docs
+        - id: lp-flow-api-docs
+          uri: lb://lp-flow
+          predicates:
+            - Path=/lp-flow/v3/api-docs
+          filters:
+            - RewritePath=/lp-flow/v3/api-docs, /v3/api-docs
+        - id: lp-system
+          uri: lb://lp-system
+          predicates:
+            - Path=/auth/**,/system/**,/tool/**,/log/**,/online/**,/profile/**,/ws/**
+        - id: lp-file
+          uri: lb://lp-file
+          predicates:
+            - Path=/file/**,/files/**
+        - id: lp-flow
+          uri: lb://lp-flow
+          predicates:
+            - Path=/flow/**
+        - id: lp-monitor
+          uri: lb://lp-monitor
+          predicates:
+            - Path=/monitor/**
+
+knife4j:
+  gateway:
+    enabled: true
+    # manual：按下方 routes 聚合各服务文档，不依赖网关自动发现
+    strategy: manual
+    routes:
+      - name: 系统服务
+        url: /lp-system/v3/api-docs
+        service-name: lp-system
+      - name: 监控服务
+        url: /lp-monitor/v3/api-docs
+        service-name: lp-monitor
+      - name: 文件服务
+        url: /lp-file/v3/api-docs
+        service-name: lp-file
+      - name: 流程服务
+        url: /lp-flow/v3/api-docs
+        service-name: lp-flow
+
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  timeout: 86400
+  active-timeout: -1
+  is-concurrent: true
+  is-share: false
+  token-style: uuid
+  is-read-cookie: false
+  is-read-header: true
+  is-log: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.yeharn.lp: info
+    org.springframework.cloud.gateway: warn

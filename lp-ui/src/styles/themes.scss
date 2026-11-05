@@ -1,0 +1,101 @@
+/*
+ * @Author: Yeharn
+ * @Date:2026-11-04
+ * @Version: 1.0.0
+ * @Description: 主题变量：5 套配色方案与暗黑模式覆盖
+ */
+
+/* ============================================================
+ * 主题系统：通过 html[data-theme] 切换 CSS 变量，与登录页渐变风格适配
+ * ============================================================ */
+
+:root {
+  --lp-primary: #3b82f6;
+  --lp-primary-light: #60a5fa;
+  --lp-primary-dark: #2563eb;
+  --lp-bg-start: #eef4ff;
+  --lp-bg-mid: #e8f1ff;
+  --lp-bg-end: #f4f7fe;
+  --lp-card-bg: rgba(255, 255, 255, 0.72);
+  --lp-card-border: rgba(255, 255, 255, 0.6);
+  --lp-card-shadow: 0 8px 32px rgba(31, 60, 122, 0.08);
+  --lp-text: #1f2937;
+  --lp-sidebar-bg: rgba(15, 23, 42, 0.94);
+  --lp-sidebar-text: #cbd5e1;
+  --lp-blob-opacity: 0.35;
+
+  /* Element Plus 联动 */
+  --el-color-primary: var(--lp-primary);
+  --el-color-primary-light-3: var(--lp-primary-light);
+  --el-color-primary-dark-2: var(--lp-primary-dark);
+  --el-border-radius-base: 10px;
+  --el-border-radius-small: 8px;
+  --el-border-radius-round: 100px;
+}
+
+/* 极光蓝（默认） */
+[data-theme='aurora'] {
+  --lp-primary: #3b82f6;
+  --lp-primary-light: #60a5fa;
+  --lp-primary-dark: #2563eb;
+  --lp-bg-start: #eef4ff;
+  --lp-bg-mid: #e4f0ff;
+  --lp-bg-end: #f5f8ff;
+}
+
+/* 暮光紫 */
+[data-theme='violet'] {
+  --lp-primary: #8b5cf6;
+  --lp-primary-light: #a78bfa;
+  --lp-primary-dark: #7c3aed;
+  --lp-bg-start: #f3efff;
+  --lp-bg-mid: #ece5ff;
+  --lp-bg-end: #f8f6ff;
+}
+
+/* 青碧 */
+[data-theme='emerald'] {
+  --lp-primary: #10b981;
+  --lp-primary-light: #34d399;
+  --lp-primary-dark: #059669;
+  --lp-bg-start: #ecfdf5;
+  --lp-bg-mid: #e3faf0;
+  --lp-bg-end: #f4fcf9;
+}
+
+/* 玫瑰 */
+[data-theme='rose'] {
+  --lp-primary: #f43f5e;
+  --lp-primary-light: #fb7185;
+  --lp-primary-dark: #e11d48;
+  --lp-bg-start: #fff1f3;
+  --lp-bg-mid: #ffe9ee;
+  --lp-bg-end: #fff7f8;
+}
+
+/* 暗夜 */
+[data-theme='midnight'] {
+  --lp-primary: #818cf8;
+  --lp-primary-light: #a5b4fc;
+  --lp-primary-dark: #6366f1;
+  --lp-bg-start: #0f172a;
+  --lp-bg-mid: #111c33;
+  --lp-bg-end: #0b1220;
+  --lp-card-bg: rgba(23, 33, 54, 0.72);
+  --lp-card-border: rgba(148, 163, 184, 0.16);
+  --lp-card-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  --lp-text: #e2e8f0;
+  --lp-blob-opacity: 0.22;
+  --el-bg-color: #16203a;
+  --el-bg-color-overlay: #1a2647;
+  --el-fill-color-blank: #16203a;
+  --el-text-color-primary: #e2e8f0;
+  --el-text-color-regular: #cbd5e1;
+  --el-border-color: rgba(148, 163, 184, 0.25);
+  --el-border-color-light: rgba(148, 163, 184, 0.18);
+  --el-border-color-lighter: rgba(148, 163, 184, 0.12);
+}
+
+html.lp-dark {
+  color-scheme: dark;
+}

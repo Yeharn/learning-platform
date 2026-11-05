@@ -1,0 +1,120 @@
+# @Author: Yeharn
+# @Date:2026-11-04
+# @Version: 1.0.0
+# @Description: 系统服务主配置：数据源、Redis、MyBatis-Flex、Sa-Token
+
+server:
+  port: 9201
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: lp-system
+  # 环境由 Maven profile 打包时注入：mvn package -P dev|test|prod
+  profiles:
+    active: @profiles.active@
+  config:
+    import:
+      - optional:nacos:lp-system.yaml
+  cloud:
+    nacos:
+      server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+      discovery:
+        namespace: public
+        group: DEFAULT_GROUP
+      config:
+        namespace: public
+        group: DEFAULT_GROUP
+        file-extension: yaml
+  jackson:
+    time-zone: GMT+8
+  mail:
+    host: ${LP_MAIL_HOST:}
+    port: ${LP_MAIL_PORT:465}
+    username: ${LP_MAIL_USERNAME:}
+    password: ${LP_MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.ssl.enable: true
+
+mybatis-flex:
+  global-config:
+    print-banner: false
+    normal-value-of-logic-delete: 0
+    deleted-value-of-logic-delete: 2
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  timeout: 86400
+  active-timeout: -1
+  is-concurrent: true
+  is-share: false
+  token-style: uuid
+  is-read-cookie: false
+  is-read-header: true
+  is-log: false
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+  default-flat-param-object: true
+  packages-to-scan: org.yeharn.lp.system
+
+knife4j:
+  enable: true
+  production: false
+  setting:
+    language: zh_cn
+    enable-footer: false
+    enable-open-api: false
+    enable-group: true
+
+lp:
+  security:
+    aes-key: LearningPlatform2026AesKey!
+  datasource:
+    max-pool-size: 10
+  mail:
+    # 邮件发送开关（消息中心模式为 email 时生效）
+    enabled: false
+    from: ${LP_MAIL_FROM:}
+  xxl-job:
+    # XXL-JOB 执行器（需要部署 xxl-job-admin 后开启）
+    enabled: false
+    admin-addresses: ${LP_XXL_ADMIN:http://127.0.0.1:8081/xxl-job-admin}
+    appname: lp-system
+    port: 9999
+    access-token: default_token
+  job:
+    # 内置定时任务调度线程池大小
+    pool-size: 4
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  health:
+    # 邮件服务器为可选组件，未配置时不纳入健康检查
+    mail:
+      enabled: false
+
+logging:
+  level:
+    org.yeharn.lp: info
+    com.mybatisflex: warn

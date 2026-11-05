@@ -1,0 +1,19 @@
+# @Author: Yeharn
+# @Date:2026-11-04
+# @Version: 1.0.0
+# @Description: 网关服务配置文件（本地开发环境）
+
+# 本地开发环境
+spring:
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      password: Redis@ZnSoft
+      database: 0
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2

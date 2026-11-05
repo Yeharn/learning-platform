@@ -1,0 +1,23 @@
+# @Author: Yeharn
+# @Date:2026-11-04
+# @Version: 1.0.0
+# @Description: 监控服务配置文件（生产环境）
+
+# 线上生产环境
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${LP_DB_HOST:prod-mysql}:3306/learning_platform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${LP_DB_USER:root}
+    password: ${LP_DB_PASSWORD:MySQL@ZnSoft}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-test-query: SELECT 1
+  data:
+    redis:
+      host: ${LP_REDIS_HOST:prod-redis}
+      port: ${LP_REDIS_PORT:6379}
+      password: ${LP_REDIS_PASSWORD:Redis@ZnSoft}
+      database: 0
+      timeout: 5000ms

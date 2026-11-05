@@ -1,0 +1,14 @@
+# @Author: Yeharn
+# @Date:2026-11-04
+# @Version: 1.0.0
+# @Description: 网关服务配置文件（测试环境）
+
+# 测试环境
+spring:
+  data:
+    redis:
+      host: ${LP_REDIS_HOST:test-redis}
+      port: ${LP_REDIS_PORT:6379}
+      password: ${LP_REDIS_PASSWORD:Redis@ZnSoft}
+      database: 0
+      timeout: 5000ms

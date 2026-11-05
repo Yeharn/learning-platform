@@ -1,0 +1,107 @@
+# @Author: Yeharn
+# @Date:2026-11-04
+# @Version: 1.0.0
+# @Description: 流程服务主配置：端口、MyBatis-Plus、FlowLong 引擎参数
+
+server:
+  port: 9204
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: lp-flow
+  # 环境由 Maven profile 打包时注入：mvn package -P dev|test|prod
+  profiles:
+    active: @profiles.active@
+  config:
+    import:
+      - optional:nacos:lp-flow.yaml
+  cloud:
+    nacos:
+      server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+      discovery:
+        namespace: public
+        group: DEFAULT_GROUP
+      config:
+        namespace: public
+        group: DEFAULT_GROUP
+        file-extension: yaml
+  jackson:
+    time-zone: GMT+8
+
+# MyBatis-Plus（Warm-Flow 数据层依赖）
+mybatis-plus:
+  mapper-locations: classpath*:/warm/flow/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false
+    db-config:
+      logic-delete-field: delFlag
+      logic-delete-value: '2'
+      logic-not-delete-value: '0'
+
+# Warm-Flow（Dromara 工作流引擎，Apache-2.0）
+warm-flow:
+  enabled: true
+  banner: false
+  framework: SPRING_BOOT
+  key-type: snowflake
+  data-source-type: mysql
+  logic-delete: true
+  logic-delete-value: '2'
+  logic-not-delete-value: '0'
+  # 使用自定义设计器（lp-ui），关闭引擎自带 UI
+  ui: false
+  token-name: Authorization
+  top-text-show: true
+
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  timeout: 86400
+  active-timeout: -1
+  is-concurrent: true
+  is-share: false
+  token-style: uuid
+  is-read-cookie: false
+  is-read-header: true
+  is-log: false
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+  default-flat-param-object: true
+  packages-to-scan: org.yeharn.lp.flow
+
+knife4j:
+  enable: true
+  production: false
+  setting:
+    language: zh_cn
+    enable-footer: false
+    enable-open-api: false
+    enable-group: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.yeharn.lp: info
+    com.baomidou.mybatisplus: warn
+    org.dromara.warm: info

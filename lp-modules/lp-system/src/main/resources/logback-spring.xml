@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  @Author: Yeharn
+  @Date:2026-11-04
+  @Version: 1.0.0
+  @Description: 系统服务日志配置：控制台 + 全量 / 错误 / 业务 / SQL / 框架 分类落盘
+-->
+<configuration scan="true" scanPeriod="60 seconds">
+
+    <!-- 引入 Spring Boot 默认日志定义：注册 clr 着色与异常堆栈转换器 -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- 应用名取自 spring.application.name；日志根目录可用环境变量 LOG_PATH 覆盖 -->
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="lp-system"/>
+    <property name="LOG_HOME" value="${LOG_PATH:-logs}/${APP_NAME}"/>
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"/>
+    <property name="CONSOLE_PATTERN" value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n"/>
+
+    <!-- ==================== 输出目标 ==================== -->
+
+    <!-- 控制台输出 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 全量日志：已分类与未分类日志的汇总 -->
+    <appender name="APP_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/${APP_NAME}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/archive/${APP_NAME}-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 错误日志：仅 ERROR，便于告警与快速定位 -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/${APP_NAME}-error.log</file>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/archive/${APP_NAME}-error-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>20MB</maxFileSize>
+            <maxHistory>60</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 业务日志：org.yeharn.lp.system 包下的业务处理过程 -->
+    <appender name="BUSINESS_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/${APP_NAME}-business.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/archive/${APP_NAME}-business-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- SQL 日志：Mapper 层的 SQL 与参数，保留 7 天 -->
+    <appender name="SQL_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/${APP_NAME}-sql.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/archive/${APP_NAME}-sql-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>20MB</maxFileSize>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 框架日志：Spring、Nacos、Sa-Token、连接池、任务调度等 -->
+    <appender name="FRAMEWORK_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/${APP_NAME}-framework.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/archive/${APP_NAME}-framework-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <maxHistory>15</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ==================== 日志分类 ==================== -->
+
+    <!-- 未分类日志：全量 + 错误 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="APP_FILE"/>
+        <appender-ref ref="ERROR_FILE"/>
+    </root>
+
+    <!-- 业务日志：同时汇总到全量与错误文件 -->
+    <logger name="org.yeharn.lp.system" level="INFO">
+        <appender-ref ref="BUSINESS_FILE"/>
+    </logger>
+
+    <!-- SQL 日志：Mapper 级别为 DEBUG 时才输出 SQL；如需关闭改为 INFO -->
+    <logger name="org.yeharn.lp.system.mapper" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="SQL_FILE"/>
+        <appender-ref ref="APP_FILE"/>
+        <appender-ref ref="ERROR_FILE"/>
+    </logger>
+    <logger name="com.mybatisflex" level="WARN" additivity="false">
+        <appender-ref ref="SQL_FILE"/>
+        <appender-ref ref="APP_FILE"/>
+        <appender-ref ref="ERROR_FILE"/>
+    </logger>
+
+    <!-- 框架 / 中间件日志 -->
+    <logger name="org.springframework" level="INFO">
+        <appender-ref ref="FRAMEWORK_FILE"/>
+    </logger>
+    <logger name="com.alibaba.nacos" level="INFO">
+        <appender-ref ref="FRAMEWORK_FILE"/>
+    </logger>
+    <logger name="com.alibaba.cloud" level="INFO">
+        <appender-ref ref="FRAMEWORK_FILE"/>
+    </logger>
+    <logger name="cn.dev33.satoken" level="INFO">
+        <appender-ref ref="FRAMEWORK_FILE"/>
+    </logger>
+    <logger name="com.zaxxer.hikari" level="INFO">
+        <appender-ref ref="FRAMEWORK_FILE"/>
+    </logger>
+    <logger name="io.lettuce" level="INFO">
+        <appender-ref ref="FRAMEWORK_FILE"/>
+    </logger>
+    <logger name="com.xxl.job" level="INFO">
+        <appender-ref ref="FRAMEWORK_FILE"/>
+    </logger>
+    <logger name="com.mysql" level="WARN">
+        <appender-ref ref="FRAMEWORK_FILE"/>
+    </logger>
+
+</configuration>

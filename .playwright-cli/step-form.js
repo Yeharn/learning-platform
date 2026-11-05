@@ -1,0 +1,17 @@
+async page => {
+  const pane = page.locator('.el-tab-pane:visible')
+  await pane.locator('.palette-item', { hasText: '金额' }).click()
+  await page.waitForTimeout(600)
+  await page.locator('.designer-props input[placeholder="如：请假天数"]').fill('报销金额')
+  await page.locator('.designer-props input[placeholder="如：days"]').fill('amount')
+  await page.locator('.designer-props .el-checkbox', { hasText: '必填' }).click()
+  await page.waitForTimeout(300)
+  await pane.locator('.palette-item', { hasText: '附件' }).click()
+  await page.waitForTimeout(600)
+  await page.locator('.designer-props input[placeholder="如：请假天数"]').fill('发票附件')
+  await page.locator('.designer-props input[placeholder="如：days"]').fill('invoice')
+  await page.waitForTimeout(300)
+  const fields = await page.locator('.form-field-label').allInnerTexts()
+  const keys = await page.locator('.form-field-key').allInnerTexts()
+  return JSON.stringify({ fields, keys })
+}

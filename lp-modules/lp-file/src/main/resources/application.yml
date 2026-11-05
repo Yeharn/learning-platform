@@ -1,0 +1,105 @@
+# @Author: Yeharn
+# @Date:2026-11-04
+# @Version: 1.0.0
+# @Description: 文件服务主配置：端口、存储模式、上传大小限制
+
+server:
+  port: 9203
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: lp-file
+  # 环境由 Maven profile 打包时注入：mvn package -P dev|test|prod
+  profiles:
+    active: @profiles.active@
+  config:
+    import:
+      - optional:nacos:lp-file.yaml
+  cloud:
+    nacos:
+      server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+      discovery:
+        namespace: public
+        group: DEFAULT_GROUP
+      config:
+        namespace: public
+        group: DEFAULT_GROUP
+        file-extension: yaml
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 200MB
+  jackson:
+    time-zone: GMT+8
+
+mybatis-flex:
+  global-config:
+    print-banner: false
+    normal-value-of-logic-delete: 0
+    deleted-value-of-logic-delete: 2
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  timeout: 86400
+  active-timeout: -1
+  is-concurrent: true
+  is-share: false
+  token-style: uuid
+  is-read-cookie: false
+  is-read-header: true
+  is-log: false
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+  default-flat-param-object: true
+  packages-to-scan: org.yeharn.lp.file
+
+knife4j:
+  enable: true
+  production: false
+  setting:
+    language: zh_cn
+    enable-footer: false
+    enable-open-api: false
+    enable-group: true
+
+lp:
+  file:
+    # 为空时自动判断：Windows -> C:/lp/upload，其他 -> /data/lp/upload
+    storage-path: ${LP_FILE_PATH:}
+    # 存储模式可运行时在页面切换（sys_config: sys.file.mode），此处为初始默认值
+    mode: local
+    s3:
+      # MinIO 与 RustFS 均使用 S3 协议，切换模式仅需修改 endpoint 与密钥
+      endpoint: ${LP_S3_ENDPOINT:http://127.0.0.1:9000}
+      access-key: ${LP_S3_AK:}
+      secret-key: ${LP_S3_SK:}
+      bucket: ${LP_S3_BUCKET:lp-files}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.yeharn.lp: info
+    com.mybatisflex: warn
