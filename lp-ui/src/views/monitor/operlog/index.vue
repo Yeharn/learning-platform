@@ -114,7 +114,7 @@
       />
     </div>
 
-    <el-drawer v-model="drawer" title="操作日志详情" size="560px">
+    <el-drawer v-model="drawer" title="操作日志详情" size="560px" append-to-body>
       <el-descriptions :column="1" border>
         <el-descriptions-item label="模块">{{ detail.title }}</el-descriptions-item>
         <el-descriptions-item label="操作人">{{ detail.operName }}</el-descriptions-item>

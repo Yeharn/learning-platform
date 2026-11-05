@@ -55,7 +55,7 @@
         v-model:current-page="query.pageNum" v-model:page-size="query.pageSize" @change="load" />
     </el-card>
 
-    <el-drawer v-model="drawerVisible" title="运行批次详情" size="520px">
+    <el-drawer v-model="drawerVisible" title="运行批次详情" size="520px" append-to-body>
       <div v-if="detail" class="detail">
         <div class="detail-head">
           <span class="batch">BATCH #{{ detail.logId }}</span>

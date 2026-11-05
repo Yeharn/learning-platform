@@ -61,7 +61,7 @@
         v-model:current-page="query.pageNum" v-model:page-size="query.pageSize" @change="load" />
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="form.jobId ? '修改任务' : '新增任务'" width="720px" top="6vh">
+    <el-dialog v-model="dialogVisible" :title="form.jobId ? '修改任务' : '新增任务'" width="720px" top="6vh" append-to-body>
       <el-form label-width="90px">
         <el-form-item label="任务名称"><el-input v-model="form.jobName" placeholder="如：服务健康巡检" /></el-form-item>
         <el-form-item label="处理器">
