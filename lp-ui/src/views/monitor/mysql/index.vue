@@ -75,48 +75,19 @@
     </el-row>
 
     <el-row :gutter="16">
-      <el-col :xs="24" :lg="12">
+      <el-col :xs="24">
         <el-card shadow="never">
-          <template #header>基础信息</template>
-          <el-descriptions :column="1" border>
-            <el-descriptions-item label="版本">{{ info.basic?.version }}</el-descriptions-item>
-            <el-descriptions-item label="主机">{{ info.basic?.hostname }}:{{ info.basic?.port }}</el-descriptions-item>
-            <el-descriptions-item label="数据目录">{{ info.basic?.datadir }}</el-descriptions-item>
-            <el-descriptions-item label="最大连接">{{ info.basic?.maxConnections }}</el-descriptions-item>
-            <el-descriptions-item label="连接使用率">{{ info.basic?.connectionUsage }}%</el-descriptions-item>
-            <el-descriptions-item label="累计查询">{{ info.basic?.questions }}</el-descriptions-item>
-            <el-descriptions-item label="接收流量">{{ fmt(info.basic?.bytesReceived) }}</el-descriptions-item>
-            <el-descriptions-item label="发送流量">{{ fmt(info.basic?.bytesSent) }}</el-descriptions-item>
-            <el-descriptions-item label="打开表数">{{ info.basic?.openTables }}</el-descriptions-item>
-          </el-descriptions>
-        </el-card>
-      </el-col>
-
-      <el-col :xs="24" :md="12">
-        <el-card shadow="never">
-          <template #header>连接池 (HikariCP)</template>
-          <el-descriptions :column="2" border>
-            <el-descriptions-item label="活跃">{{ info.pool?.active ?? '-' }}</el-descriptions-item>
-            <el-descriptions-item label="空闲">{{ info.pool?.idle ?? '-' }}</el-descriptions-item>
-            <el-descriptions-item label="总数">{{ info.pool?.total ?? '-' }}</el-descriptions-item>
-            <el-descriptions-item label="最大">{{ info.pool?.max ?? '-' }}</el-descriptions-item>
-            <el-descriptions-item label="等待线程">{{ info.pool?.waiting ?? '-' }}</el-descriptions-item>
-            <el-descriptions-item label="池名称">{{ info.pool?.poolName ?? '-' }}</el-descriptions-item>
-          </el-descriptions>
-
-          <div class="mt16">
-            <div class="page-title">表空间 Top 10</div>
-            <el-table :data="info.topTables || []" size="small" border>
-              <el-table-column prop="name" label="表名" min-width="140" />
-              <el-table-column prop="rowsCount" label="行数" width="90" />
-              <el-table-column prop="sizeKb" label="大小(KB)" width="100" />
-            </el-table>
-          </div>
+          <template #header>表空间 Top 10</template>
+          <el-table :data="info.topTables || []" size="small" border max-height="300">
+            <el-table-column prop="name" label="表名" min-width="180" />
+            <el-table-column prop="rowsCount" label="行数" width="120" />
+            <el-table-column prop="sizeKb" label="大小(KB)" width="130" />
+          </el-table>
         </el-card>
       </el-col>
     </el-row>
 
-    <el-row :gutter="16" class="mt16">
+    <el-row :gutter="16">
       <el-col :xs="24" :md="10">
         <el-card shadow="never">
           <template #header>数据库大小</template>
@@ -201,10 +172,17 @@
 
     <el-card shadow="never" class="mt16">
       <template #header>全局状态</template>
-      <el-collapse>
-        <el-collapse-item title="展开查看" name="status">
-          <div class="status-grid">
-            <div v-for="(value, key) in info.status || {}" :key="key" class="status-item">
+      <el-collapse class="tech-collapse">
+        <el-collapse-item name="status">
+          <template #title>
+            <span class="tech-collapse-label">
+              <i class="led" />
+              <span>展开查看</span>
+              <small>RAW DATA STREAM</small>
+            </span>
+          </template>
+          <div class="tech-info-grid">
+            <div v-for="(value, key) in info.status || {}" :key="key" class="tech-info-item">
               <span class="key">{{ key }}</span><span class="value">{{ value }}</span>
             </div>
           </div>
@@ -283,37 +261,5 @@ onMounted(() => {
 <style scoped lang="scss">
 .mt16 {
   margin-top: 16px;
-}
-
-.status-grid {
-  max-height: 420px;
-  overflow: auto;
-}
-
-.status-item {
-  display: flex;
-  font-size: 12px;
-  border-bottom: 1px solid color-mix(in srgb, var(--tech-blue) 14%, transparent);
-
-  .key {
-    width: 280px;
-    padding: 5px 10px;
-    color: var(--tech-text-dim);
-    background: color-mix(in srgb, var(--tech-blue) 8%, transparent);
-    flex-shrink: 0;
-    word-break: break-all;
-  }
-
-  .value {
-    padding: 5px 10px;
-    color: var(--tech-text);
-    word-break: break-all;
-  }
-}
-
-@media (max-width: 992px) {
-  .status-item .key {
-    width: 150px;
-  }
 }
 </style>

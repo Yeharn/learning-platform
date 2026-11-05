@@ -452,6 +452,129 @@
   }
 }
 
+/* 折叠面板（展开查看）科幻化 */
+.tech-collapse {
+  .el-collapse-item__header {
+    height: 44px;
+    padding: 0 14px;
+    margin-top: 10px;
+    border-radius: var(--lp-radius-sm);
+    border: 1px solid color-mix(in srgb, var(--tech-blue) 22%, transparent);
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--tech-blue) 16%, transparent),
+      transparent 70%
+    );
+    transition: border-color 0.2s ease, background 0.2s ease;
+
+    &:hover {
+      border-color: color-mix(in srgb, var(--tech-cyan) 50%, transparent);
+    }
+
+    .tech-collapse-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 13px;
+      letter-spacing: 1px;
+      color: #fff;
+
+      .led {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--tech-cyan);
+        box-shadow: 0 0 8px color-mix(in srgb, var(--tech-cyan) 80%, transparent);
+        animation: tech-pulse 1.8s ease-out infinite;
+      }
+
+      small {
+        font-size: 11px;
+        letter-spacing: 2px;
+        color: var(--tech-text-dim);
+        font-family: 'Bahnschrift', Consolas, monospace;
+      }
+    }
+  }
+
+  .el-collapse {
+    border: none;
+  }
+
+  .el-collapse-item__wrap {
+    background: transparent;
+    border: none;
+  }
+
+  .el-collapse-item__content {
+    padding: 14px 2px 4px;
+    color: var(--tech-text);
+  }
+}
+
+/* 原始键值数据网格（完整 INFO / 全局状态）科幻化 */
+.tech-info-grid {
+  max-height: 420px;
+  overflow: auto;
+  border: 1px solid color-mix(in srgb, var(--tech-blue) 20%, transparent);
+  border-radius: var(--lp-radius-sm);
+  background: color-mix(in srgb, var(--tech-blue) 4%, transparent);
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--tech-cyan) 45%, transparent) transparent;
+
+  .tech-info-item {
+    display: flex;
+    font-size: 12px;
+    font-family: 'Bahnschrift', Consolas, 'Courier New', monospace;
+    border-bottom: 1px solid color-mix(in srgb, var(--tech-blue) 12%, transparent);
+    transition: background 0.15s ease;
+
+    &:nth-child(odd) {
+      background: color-mix(in srgb, var(--tech-blue) 6%, transparent);
+    }
+
+    &:hover {
+      background: color-mix(in srgb, var(--tech-cyan) 12%, transparent);
+
+      .key {
+        color: var(--tech-cyan);
+        text-shadow: 0 0 8px color-mix(in srgb, var(--tech-cyan) 60%, transparent);
+      }
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .key {
+      width: 280px;
+      padding: 6px 12px;
+      color: var(--tech-text-dim);
+      background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--tech-blue) 14%, transparent),
+        color-mix(in srgb, var(--tech-blue) 4%, transparent)
+      );
+      border-right: 1px solid color-mix(in srgb, var(--tech-cyan) 22%, transparent);
+      flex-shrink: 0;
+      word-break: break-all;
+      transition: color 0.15s ease, text-shadow 0.15s ease;
+    }
+
+    .value {
+      padding: 6px 12px;
+      color: var(--tech-text);
+      word-break: break-all;
+    }
+  }
+}
+
+@media (max-width: 992px) {
+  .tech-info-grid .tech-info-item .key {
+    width: 150px;
+  }
+}
+
 /* 响应式 */
 @media (max-width: 1200px) {
   .tech-metrics {

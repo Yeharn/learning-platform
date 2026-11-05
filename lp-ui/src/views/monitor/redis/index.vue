@@ -101,10 +101,17 @@
 
     <el-card shadow="never" class="mt16">
       <template #header>完整 INFO</template>
-      <el-collapse>
-        <el-collapse-item title="展开查看" name="info">
-          <div class="info-grid">
-            <div v-for="(value, key) in info.info || {}" :key="key" class="info-item">
+      <el-collapse class="tech-collapse">
+        <el-collapse-item name="info">
+          <template #title>
+            <span class="tech-collapse-label">
+              <i class="led" />
+              <span>展开查看</span>
+              <small>RAW DATA STREAM</small>
+            </span>
+          </template>
+          <div class="tech-info-grid">
+            <div v-for="(value, key) in info.info || {}" :key="key" class="tech-info-item">
               <span class="key">{{ key }}</span><span class="value">{{ value }}</span>
             </div>
           </div>
@@ -166,40 +173,6 @@ onMounted(load)
     font-weight: 500;
     text-align: right;
     word-break: break-all;
-  }
-}
-
-.info-grid {
-  max-height: 420px;
-  overflow: auto;
-  border: 1px solid color-mix(in srgb, var(--tech-blue) 16%, transparent);
-  border-radius: var(--lp-radius-sm);
-}
-
-.info-item {
-  display: flex;
-  font-size: 12px;
-  border-bottom: 1px solid color-mix(in srgb, var(--tech-blue) 10%, transparent);
-
-  .key {
-    width: 260px;
-    padding: 6px 10px;
-    color: var(--tech-text-dim);
-    background: color-mix(in srgb, var(--tech-blue) 8%, transparent);
-    flex-shrink: 0;
-    word-break: break-all;
-  }
-
-  .value {
-    padding: 6px 10px;
-    color: var(--tech-text);
-    word-break: break-all;
-  }
-}
-
-@media (max-width: 992px) {
-  .info-item .key {
-    width: 140px;
   }
 }
 </style>

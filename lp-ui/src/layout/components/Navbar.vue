@@ -222,10 +222,14 @@ onUnmounted(() => {
 }
 
 .collapse-btn {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 19px;
   cursor: pointer;
   color: var(--lp-text-secondary);
-  padding: 6px;
   border-radius: var(--lp-radius-sm);
   transition: background 0.18s ease, color 0.18s ease;
 
@@ -238,19 +242,26 @@ onUnmounted(() => {
 .right {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
+/* 顶部图标按钮：统一 34px 方形热区（与消息/在线徽标一致） */
 .nav-icon {
-  font-size: 17px;
+  width: 34px;
+  height: 34px;
+  font-size: 18px;
   color: var(--lp-text-secondary);
   cursor: pointer;
-  padding: 5px;
   border-radius: var(--lp-radius-sm);
   transition: color 0.18s ease, background 0.18s ease;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+
+  :deep(.el-icon) {
+    font-size: 18px;
+  }
 
   &:hover {
     color: var(--lp-primary);
@@ -316,12 +327,14 @@ onUnmounted(() => {
 
 @media (max-width: 992px) {
   .right {
-    gap: 8px;
+    gap: 6px;
   }
 
-  .nav-icon {
+  .nav-icon,
+  .collapse-btn {
+    width: 30px;
+    height: 30px;
     font-size: 16px;
-    padding: 4px;
   }
 }
 </style>

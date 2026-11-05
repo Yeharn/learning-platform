@@ -457,6 +457,7 @@ INSERT INTO `sys_menu` (`menu_id`,`menu_name`,`parent_id`,`order_num`,`path`,`co
 (203,'服务监控',2,4,'server','monitor/server/index',NULL,0,1,'C','0','0','monitor:server:list','Cpu',NULL,'admin',NOW()),
 (204,'Redis监控',2,5,'redis','monitor/redis/index',NULL,0,1,'C','0','0','monitor:redis:list','DataLine',NULL,'admin',NOW()),
 (205,'MySQL监控',2,6,'mysql','monitor/mysql/index',NULL,0,1,'C','0','0','monitor:mysql:list','Coin',NULL,'admin',NOW()),
+(206,'服务注册监控',2,7,'service','monitor/service/index',NULL,0,1,'C','0','0','monitor:service:list','DataAnalysis','Eureka 注册中心服务健康监控','admin',NOW()),
 
 (300,'代码生成',3,1,'gen','tool/gen/index',NULL,0,1,'C','0','0','tool:gen:list','MagicStick',NULL,'admin',NOW()),
 
@@ -543,12 +544,13 @@ INSERT INTO `sys_menu` (`menu_id`,`menu_name`,`parent_id`,`order_num`,`path`,`co
 (3021,'流程发起',302,2,'','',NULL,0,1,'F','0','0','tool:flow:start',NULL,NULL,'admin',NOW()),
 (3022,'流程办理',302,3,'','',NULL,0,1,'F','0','0','tool:flow:execute',NULL,NULL,'admin',NOW()),
 (3023,'流程删除',302,4,'','',NULL,0,1,'F','0','0','tool:flow:remove',NULL,NULL,'admin',NOW()),
-(1151,'慢SQL治理',205,1,'','',NULL,0,1,'F','0','0','monitor:mysql:kill',NULL,NULL,'admin',NOW());
+(1151,'慢SQL治理',205,1,'','',NULL,0,1,'F','0','0','monitor:mysql:kill',NULL,NULL,'admin',NOW()),
+(1160,'服务注册监控查询',206,1,'','',NULL,0,1,'F','0','0','monitor:service:query',NULL,NULL,'admin',NOW());
 
 -- 超级管理员拥有全部菜单；普通用户：用户管理(只读) + 日志/服务监控
 INSERT INTO `sys_role_menu` (`role_id`,`menu_id`) SELECT 1, menu_id FROM `sys_menu`;
 INSERT INTO `sys_role_menu` (`role_id`,`menu_id`) VALUES
-(2,1),(2,100),(2,1000),(2,2),(2,201),(2,1110),(2,202),(2,1120),(2,203),(2,1130),
+(2,1),(2,100),(2,1000),(2,2),(2,201),(2,1110),(2,202),(2,1120),(2,203),(2,1130),(2,206),(2,1160),
 (3,1),(3,107),(3,1070),(3,1074),(3,2),(2,200),(2,109),(3,1151);
 
 INSERT INTO `sys_dict_type` (`dict_name`,`dict_type`,`status`,`remark`,`create_by`,`create_time`) VALUES

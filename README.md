@@ -1,7 +1,7 @@
 # Learning Platform 微服务权限管理系统
 
 基于 **Spring Boot 3 + Spring Cloud Netflix (Eureka) + Sa-Token + MyBatis-Flex + Vue 3 + TypeScript** 的前后端分离微服务权限管理系统。
-提供 RBAC 权限模型、动态菜单路由、数据权限、多数据源切换、代码生成器、服务器 / Redis / MySQL 监控等能力。
+提供 RBAC 权限模型、动态菜单路由、数据权限、多数据源切换、代码生成器、服务器 / Redis / MySQL / 服务注册监控等能力。
 
 ---
 
@@ -228,6 +228,7 @@ Vite 已将 `/api` 代理到 `http://127.0.0.1:8080`（同时开启 `ws: true` �
 - **服务监控**：OSHI 采集 CPU、内存、JVM、磁盘、网络、服务器与 JVM 运行时信息，前端 10 秒自动刷新
 - **Redis 监控**：`INFO` 指标、内存、连接数、命中率、Key 数量、命令统计、持久化信息
 - **MySQL 监控**：`SHOW GLOBAL STATUS/VARIABLES`、连接数、QPS/TPS、缓冲池命中、慢查询、当前会话列表、HikariCP 连接池状态
+- **服务注册监控**：基于 Eureka 注册中心枚举全部服务与实例，并行探测各实例 `/actuator/health`，展示注册地址、健康状态、组件明细（db / redis 等）、响应耗时、注册时间、租约与元数据版本，30 秒自动刷新
 - **慢 SQL 审计**：`performance_schema` 慢 SQL 列表（SQL 文本、执行次数、总/平均/最大耗时、扫描行数、库表），长事务与长 SQL 会话列表，支持按 `threadId` **KILL** 慢 SQL / 锁表会话
 
 ### 系统工具
@@ -410,10 +411,11 @@ public List<Map<String, Object>> listFromSlave() {
 | `GET /monitor/mysql/slow` | 慢 SQL 审计：`performance_schema.events_statements_summary_by_digest` 聚合的 SQL 文本、执行次数、总/平均/最大耗时、扫描行数、库表 |
 | `GET /monitor/mysql/long?threshold=3` | 执行超过 N 秒的长 SQL 与长事务会话（`information_schema.processlist` + `innodb_trx`） |
 | `GET /monitor/mysql/kill?threadId=` | KILL 指定会话，用于终止慢 SQL 或锁表 SQL |
+| `GET /monitor/service` | 服务注册监控：枚举注册中心服务实例并聚合健康探测结果 |
 
-- 权限标识：`monitor:server:list`、`monitor:redis:list`、`monitor:mysql:list`、`monitor:mysql:kill`
-- 前端页面位于 `lp-ui/src/views/monitor/{server,redis,mysql}`，服务监控 10 秒轮询刷新；MySQL 页含「慢 SQL 审计」「长 SQL 与事务」Tab，KILL 按钮受 `monitor:mysql:kill` 控制
-- 数据来源：OSHI（系统）、`StringRedisTemplate` + `INFO`（Redis）、`SHOW GLOBAL STATUS/VARIABLES` + `performance_schema` + `information_schema`（MySQL）
+- 权限标识：`monitor:server:list`、`monitor:redis:list`、`monitor:mysql:list`、`monitor:mysql:kill`、`monitor:service:list`
+- 前端页面位于 `lp-ui/src/views/monitor/{server,redis,mysql,service}`，服务监控 10 秒轮询刷新、服务注册监控 30 秒自动刷新；MySQL 页含「慢 SQL 审计」「长 SQL 与事务」Tab，KILL 按钮受 `monitor:mysql:kill` 控制
+- 数据来源：OSHI（系统）、`StringRedisTemplate` + `INFO`（Redis）、`SHOW GLOBAL STATUS/VARIABLES` + `performance_schema` + `information_schema`（MySQL）、`DiscoveryClient` + 各实例 `/actuator/health`（服务注册）
 
 ---
 
