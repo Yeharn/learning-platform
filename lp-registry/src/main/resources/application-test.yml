@@ -1,0 +1,10 @@
+# @Author: Yeharn
+# @Date:2026-11-05
+# @Version: 1.0.0
+# @Description: 注册中心 test 环境配置：单机部署，与 dev 一致采用快速剔除，便于联调
+
+eureka:
+  server:
+    enable-self-preservation: false
+    eviction-interval-timer-in-ms: 10000
+    wait-time-in-ms-when-sync-empty: 0

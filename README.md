@@ -1,6 +1,6 @@
 # Learning Platform 微服务权限管理系统
 
-基于 **Spring Boot 3 + Spring Cloud Alibaba + Sa-Token + MyBatis-Flex + Vue 3 + TypeScript** 的前后端分离微服务权限管理系统。
+基于 **Spring Boot 3 + Spring Cloud Netflix (Eureka) + Sa-Token + MyBatis-Flex + Vue 3 + TypeScript** 的前后端分离微服务权限管理系统。
 提供 RBAC 权限模型、动态菜单路由、数据权限、多数据源切换、代码生成器、服务器 / Redis / MySQL 监控等能力。
 
 ---
@@ -14,7 +14,7 @@
 | JDK | Java | 21 |
 | 基础框架 | Spring Boot | 3.2.5 |
 | 微服务 | Spring Cloud | 2023.0.1 |
-| 微服务 | Spring Cloud Alibaba (Nacos) | 2023.0.1.0 |
+| 微服务 | Spring Cloud Netflix (Eureka) | 2023.0.1 |
 | 网关 | Spring Cloud Gateway (WebFlux) | 随 Cloud |
 | 认证鉴权 | Sa-Token（spring-boot3 / reactor-spring-boot3） | 1.38.0 |
 | ORM | MyBatis-Flex | 1.11.7 |
@@ -75,11 +75,11 @@
         ┌─────────┴────────────┐
         │                │
         ▼                ▼
-   ┌─────────┐     ┌──────────┐        ┌──────────────┐
-   │  MySQL  │     │  Redis   │        │ Nacos :8848  │
-   │ 业务库  │     │ 会话/验证码│       │ 注册 + 配置  │
-   │ +多数据源│     │ 在线用户  │        └──────────────┘
-   └─────────┘     └──────────┘
+   ┌─────────┐     ┌──────────┐        ┌────────────────┐
+   │  MySQL  │     │  Redis   │        │ lp-registry    │
+   │ 业务库  │     │ 会话/验证码│       │ Eureka :8849   │
+   │ +多数据源│     │ 在线用户  │        │ 注册中心        │
+   └─────────┘     └──────────┘        └────────────────┘
 ```
 
 ### 模块划分
@@ -92,6 +92,7 @@ LearningPlatform
 ├── sql/upgrade_v3.sql               # v3 增量升级（流程中心菜单、流程沟通评论表）
 ├── sql/upgrade_v4.sql               # v4 增量升级（warm-flow 表单模板、已阅记录表与权限）
 ├── sql/warm-flow/                   # Warm-Flow（Dromara）MySQL 建表脚本（flow_*）
+├── lp-registry                      # 注册中心 :8849（Eureka Server）
 ├── lp-common                        # 公共模块（被所有服务依赖）
 │   └── org.yeharn.lp.common
 │       ├── core        R / PageResult / PageQuery / BaseEntity / ServiceException / Constants
@@ -120,7 +121,7 @@ LearningPlatform
 | lp-flow | 9204 | 流程服务（Warm-Flow Dromara） |
 | MySQL | 3306 | 数据库 `learning_platform` |
 | Redis | 6379 | 密码 `Redis@ZnSoft` |
-| Nacos | 8848 | 注册中心 / 配置中心 |
+| lp-registry | 8849 | 注册中心（Eureka Server，启动即用，无需数据库） |
 | lp-ui (dev) | 5173 | Vite 开发服务器 |
 
 ---
@@ -133,7 +134,6 @@ LearningPlatform
 - Maven 3.9+
 - MySQL 8.x，账号 `root / MySQL@ZnSoft`
 - Redis 7.x，密码 `Redis@ZnSoft`
-- Nacos 2.x，单机模式启动于 `127.0.0.1:8848`
 - Node.js 18+ / npm 9+
 
 ### 2. 初始化数据库
@@ -154,16 +154,12 @@ mysql -uroot -p'MySQL@ZnSoft' learning_platform < sql/upgrade_v4.sql
 
 > 操作日志与登录日志采用**按月分表**：`sys_oper_log_YYYYMM` / `sys_login_log_YYYYMM` 由服务在首次写入时自动 `CREATE TABLE ... LIKE` 创建，无需手工建月表；`sys_oper_log` / `sys_login_log` 作为历史归档表保留。
 
-### 3. 启动 Nacos
+### 3. 启动注册中心
 
 ```bash
-# Windows
-startup.cmd -m standalone
-# Linux / macOS
-sh startup.sh -m standalone
+java -jar lp-registry/target/lp-registry.jar
+# 注册中心控制台: http://127.0.0.1:8849 （纯内存注册表，无需数据库，启动即用）
 ```
-
-> 配置中心采用 `optional:nacos:lp-xxx.yaml`，Nacos 中不存在对应配置也能正常启动，便于本地开发。
 
 ### 4. 构建并启动后端
 
@@ -173,6 +169,7 @@ mvn -DskipTests clean package
 # 按环境打包：dev / test / prod
 mvn -DskipTests clean package -P prod
 
+java -jar lp-registry/target/lp-registry.jar
 java -jar lp-gateway/target/lp-gateway.jar
 java -jar lp-modules/lp-system/target/lp-system.jar
 java -jar lp-modules/lp-monitor/target/lp-monitor.jar
@@ -182,7 +179,7 @@ java -jar lp-modules/lp-flow/target/lp-flow.jar
 
 `-P dev|test|prod` 会激活 `application-{env}.yml`（见「十七、多环境打包与日志分表」），无需手工改配置。
 
-启动顺序建议：Nacos → lp-system / lp-monitor / lp-file / lp-flow → lp-gateway。也可直接在 IDE 中运行五个 `*Application` 主类。
+启动顺序建议：lp-registry → lp-system / lp-monitor / lp-file / lp-flow → lp-gateway。也可直接在 IDE 中运行六个 `*Application` 主类。
 
 ### 5. 启动前端
 
@@ -560,8 +557,6 @@ server:
   port: 8080
 spring:
   cloud:
-    nacos:
-      server-addr: 127.0.0.1:8848
     gateway:
       routes:
         - id: lp-system
@@ -667,7 +662,7 @@ VITE_APP_BASE_API=/api      # 开发环境经 Vite 代理到网关 8080
 - 接口权限以后端注解为准，前端 `v-hasPerm` 仅为体验优化
 - 逻辑删除由 MyBatis-Flex 全局接管，业务代码无需手写 `del_flag` 条件
 - 操作日志通过 Spring 事件异步落库，避免阻塞主流程
-- 生产环境请修改默认密码、`aes-key`、数据库/Redis 凭据，并开启 HTTPS 与 Nacos 鉴权
+- 生产环境请修改默认密码、`aes-key`、数据库/Redis 凭据，并开启 HTTPS 与注册中心安全加固（Eureka Basic Auth 或网络隔离）
 - 生产环境建议关闭接口文档：设置 `knife4j.production=true`、`springdoc.api-docs.enabled=false`，并移除网关与业务服务中 `/doc.html`、`/v3/api-docs/**` 的白名单
 
 ---
@@ -741,29 +736,37 @@ mvn -DskipTests clean package -P test    # 测试环境
 mvn -DskipTests clean package -P prod    # 线上环境
 ```
 
-`application.yml` 使用 `spring.profiles.active: @profiles.active@`，由 Maven 资源过滤替换；各服务均提供 `application-dev.yml` / `application-test.yml` / `application-prod.yml`，分别配置 MySQL、Redis、Nacos、文件根路径与文档开关。
+`application.yml` 使用 `spring.profiles.active: @profiles.active@`，由 Maven 资源过滤替换；各服务均提供 `application-dev.yml` / `application-test.yml` / `application-prod.yml`，分别配置 MySQL、Redis、注册中心地址（`EUREKA_ADDR`）、文件根路径与文档开关。
 
 ### 17.2 日志分类（各服务独立 logback-spring.xml）
 
-五个可启动服务（`lp-gateway` / `lp-system` / `lp-flow` / `lp-file` / `lp-monitor`）各自在 `src/main/resources/logback-spring.xml` 定义日志策略，按「模块目录 + 类别文件」落盘：
+六个可启动服务（`lp-registry` / `lp-gateway` / `lp-system` / `lp-flow` / `lp-file` / `lp-monitor`）各自在 `src/main/resources/logback-spring.xml` 定义日志策略，统一落盘到**项目根目录**（与 `README.md` 同级）的 `logs/` 下，并按模块名称分子目录：
 
 ```text
-logs/
-└── lp-system/
-    ├── lp-system.log              # 全量：INFO 及以上，含全部分类
-    ├── lp-system-error.log        # 仅 ERROR：告警与排障入口
-    ├── lp-system-business.log     # 业务：org.yeharn.lp.system.*
-    ├── lp-system-sql.log          # SQL：Mapper / JdbcTemplate（保留 7 天）
-    ├── lp-system-framework.log    # 框架：Spring / Nacos / Sa-Token / 连接池 / XXL-JOB
-    └── archive/                   # 跨天或超 50MB 后的 gz 归档
+logs/                            # 项目根，与 README.md 同级
+├── lp-registry/                 # 注册中心
+│   ├── lp-registry.log
+│   ├── lp-registry-error.log
+│   └── lp-registry-framework.log
+├── lp-gateway/
+├── lp-system/
+│   ├── lp-system.log              # 全量：INFO 及以上，含全部分类
+│   ├── lp-system-error.log        # 仅 ERROR：告警与排障入口
+│   ├── lp-system-business.log     # 业务：org.yeharn.lp.system.*
+│   ├── lp-system-sql.log          # SQL：Mapper / JdbcTemplate（保留 7 天）
+│   ├── lp-system-framework.log    # 框架：Spring / Eureka / Sa-Token / 连接池 / XXL-JOB
+│   └── archive/                   # 跨天或超 50MB 后的 gz 归档
+├── lp-monitor/
+├── lp-file/
+└── lp-flow/
 ```
 
-- 业务包 `org.yeharn.lp.xxx` 写入 `-business`；数据访问（Mapper、`JdbcTemplate`、MyBatis-Flex / MyBatis-Plus）写入 `-sql`；Spring、Nacos、Sa-Token、HikariCP、Lettuce、MinIO、XXL-JOB 等写入 `-framework`；未命中分类的日志进入全量文件
+- 业务包 `org.yeharn.lp.xxx` 写入 `-business`；数据访问（Mapper、`JdbcTemplate`、MyBatis-Flex / MyBatis-Plus）写入 `-sql`；Spring、Eureka、Sa-Token、HikariCP、Lettuce、MinIO、XXL-JOB 等写入 `-framework`；未命中分类的日志进入全量文件
 - 分类日志同时汇总进全量与错误文件（`additivity` 保持默认），既能按类排查，也能整体回溯
 - 滚动策略：单文件 50MB 或按天滚动并 gz 压缩；保留期全量 30 天、错误 60 天、SQL 7 天，配合 `totalSizeCap` 防止磁盘写满
-- 日志根目录默认 `logs/`（相对启动目录），可用 `-DLOG_PATH=/data/logs` 或环境变量 `LOG_PATH` 覆盖，目录名取 `spring.application.name`
+- 日志根目录默认 `logs/`：命令行在**项目根**执行 `java -jar xxx/target/xxx.jar`、或 IDE 运行配置 WorkingDirectory 为项目根时，日志即统一写入项目根 `logs/<模块名>/`；如需自定义位置，可用 `-DLOG_PATH=/data/logs` 或环境变量 `LOG_PATH` 覆盖，子目录名取 `spring.application.name`
 - SQL 日志开关：把对应 Mapper 包或 `org.springframework.jdbc.core.JdbcTemplate` 的 `level` 在 `DEBUG` / `INFO` 之间调整即可；`lp-flow` 通过 `JdbcTemplate` 与 Warm-Flow 引擎 Mapper 访问 `flow_*` 表，`lp-monitor` 通过 `JdbcTemplate` 执行监控查询
-- 网关无数据库访问，只生成全量 / 错误 / 业务 / 框架四类
+- 网关无数据库访问，只生成全量 / 错误 / 业务 / 框架四类；注册中心无业务 / SQL 分类，只生成全量 / 错误 / 框架三类
 
 ### 17.3 操作日志、登录日志按月分表
 
@@ -809,7 +812,7 @@ logs/
 
 ## 十九、已验证项
 
-- 三个后端服务（8080 / 9201 / 9202）均可正常启动并注册至 Nacos
+- 三个后端服务（8080 / 9201 / 9202）均可正常启动并注册至 Eureka（lp-registry :8849）
 - 网关端到端链路：验证码 → 登录 → `/auth/info` → `/auth/routers` → 用户/角色/菜单/字典/参数/公告/数据源/日志/在线/工作台/代码生成/三类监控接口均返回 `200`
 - 权限校验：`test` 用户（`common` 角色）访问 `/system/user/list`、`/monitor/server` 正常，访问 `/system/role/list`、`/system/menu/list` 返回 `403`，符合预期
 - 前端 `vue-tsc --noEmit` 通过，`vite build` 产物正常生成
@@ -822,7 +825,7 @@ logs/
   - `/flow/definitions` 返回自动部署的「请假审批」（key=leave，version=1）
   - `POST /flow/start` 发起成功（实例 `2117881150932336641`），`/flow/tasks` 返回「主管审批」待办，`POST /flow/tasks/{id}/complete` 通过后 `/flow/history` 状态为 `1`（审批通过）、含耗时
   - `POST /flow/model` 表单化建模部署成功（key=demo_flow），验证 JSON 模型生成逻辑
-- 服务健康：lp-system / lp-file / lp-flow / lp-monitor 的 `/actuator/health` 均为 `UP`（邮件未配置时已排除 mail 健康检查），Nacos 中注册 `lp-gateway/lp-system/lp-monitor/lp-file/lp-flow` 五个实例
+- 服务健康：lp-system / lp-file / lp-flow / lp-monitor 的 `/actuator/health` 均为 `UP`（邮件未配置时已排除 mail 健康检查），Eureka 中注册 `lp-gateway/lp-system/lp-monitor/lp-file/lp-flow` 五个实例
 - 慢 SQL：`/monitor/mysql/slow`、`/monitor/mysql/long` 返回审计数据，KILL 接口按 `threadId` 生效
 - 日志分表：`sys_oper_log_202611`（2 条）、`sys_login_log_202611`（6 条）自动创建并写入，历史数据保留在 `sys_oper_log` / `sys_login_log`
 - Maven 多环境：`-P dev|test|prod` 打包后 `application.yml` 中 `spring.profiles.active` 正确替换
