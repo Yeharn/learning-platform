@@ -164,7 +164,7 @@ h3 {
   padding: 6px 0;
 
   span {
-    color: #6b7280;
+    color: var(--lp-text-muted);
   }
 }
 

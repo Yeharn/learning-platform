@@ -335,13 +335,13 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
   font-size: 13px;
-  color: #4b5563;
+  color: var(--lp-text-secondary);
   padding: 8px 0;
 }
 
 .tree-scroll {
-  border: 1px solid #eef2f7;
-  border-radius: 6px;
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius-sm);
   padding: 8px;
 }
 
@@ -351,14 +351,14 @@ onMounted(async () => {
   gap: 8px;
 
   .perms {
-    color: #9ca3af;
+    color: var(--lp-text-muted);
     font-size: 12px;
   }
 }
 
 .dept-scope {
   margin-top: 12px;
-  border-top: 1px dashed #e5e7eb;
+  border-top: 1px dashed var(--lp-border);
   padding-top: 8px;
   max-height: 260px;
   overflow: auto;

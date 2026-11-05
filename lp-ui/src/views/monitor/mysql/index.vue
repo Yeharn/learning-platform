@@ -6,53 +6,76 @@
 -->
 
 <template>
-  <div class="app-container">
-    <div class="flex-between mb8">
-      <span class="page-title">MySQL 监控</span>
-      <el-button icon="Refresh" :loading="loading" @click="load">刷新</el-button>
+  <div class="tech-page">
+    <div class="tech-header">
+      <div class="tech-title">
+        <span class="tech-pulse" />
+        <span>MySQL 监控</span>
+        <small>DATABASE INSIGHT</small>
+      </div>
+      <div class="tech-tools">
+        <el-button icon="Refresh" :loading="loading" @click="load">刷新</el-button>
+      </div>
+    </div>
+
+    <div class="tech-metrics">
+      <div class="tech-metric">
+        <div class="metric-label">平均 QPS</div>
+        <div class="metric-value">{{ info.basic?.qps ?? 0 }}</div>
+        <div class="metric-sub">累计查询 {{ info.basic?.questions ?? '-' }}</div>
+      </div>
+      <div class="tech-metric">
+        <div class="metric-label">当前连接</div>
+        <div class="metric-value">{{ info.basic?.threadsConnected ?? 0 }}</div>
+        <div class="metric-sub">连接使用率 {{ info.basic?.connectionUsage ?? 0 }}%</div>
+      </div>
+      <div class="tech-metric" :class="Number(info.basic?.slowQueries || 0) > 0 ? 'is-warn' : ''">
+        <div class="metric-label">慢查询</div>
+        <div class="metric-value">{{ info.basic?.slowQueries ?? 0 }}</div>
+        <div class="metric-sub">阈值 {{ threshold }} 秒</div>
+      </div>
+      <div class="tech-metric">
+        <div class="metric-label">运行天数</div>
+        <div class="metric-value">{{ days(info.basic?.uptime) }}<small>天</small></div>
+        <div class="metric-sub">版本 {{ info.basic?.version || '-' }}</div>
+      </div>
     </div>
 
     <el-row :gutter="16">
-      <el-col :xs="12" :md="6">
-        <div class="stat-card" style="background: linear-gradient(135deg, #0369a1, #38bdf8)">
-          <div>
-            <div class="stat-value">{{ info.basic?.qps ?? 0 }}</div>
-            <div class="stat-label">平均 QPS</div>
-          </div>
-          <el-icon class="stat-icon"><Odometer /></el-icon>
-        </div>
+      <el-col :xs="24" :lg="12">
+        <el-card shadow="never">
+          <template #header>基础信息</template>
+          <el-descriptions :column="1" border>
+            <el-descriptions-item label="版本">{{ info.basic?.version }}</el-descriptions-item>
+            <el-descriptions-item label="主机">{{ info.basic?.hostname }}:{{ info.basic?.port }}</el-descriptions-item>
+            <el-descriptions-item label="数据目录">{{ info.basic?.datadir }}</el-descriptions-item>
+            <el-descriptions-item label="最大连接">{{ info.basic?.maxConnections }}</el-descriptions-item>
+            <el-descriptions-item label="连接使用率">{{ info.basic?.connectionUsage }}%</el-descriptions-item>
+            <el-descriptions-item label="累计查询">{{ info.basic?.questions }}</el-descriptions-item>
+            <el-descriptions-item label="接收流量">{{ fmt(info.basic?.bytesReceived) }}</el-descriptions-item>
+            <el-descriptions-item label="发送流量">{{ fmt(info.basic?.bytesSent) }}</el-descriptions-item>
+            <el-descriptions-item label="打开表数">{{ info.basic?.openTables }}</el-descriptions-item>
+          </el-descriptions>
+        </el-card>
       </el-col>
-      <el-col :xs="12" :md="6">
-        <div class="stat-card" style="background: linear-gradient(135deg, #15803d, #4ade80)">
-          <div>
-            <div class="stat-value">{{ info.basic?.threadsConnected ?? 0 }}</div>
-            <div class="stat-label">当前连接</div>
-          </div>
-          <el-icon class="stat-icon"><Connection /></el-icon>
-        </div>
-      </el-col>
-      <el-col :xs="12" :md="6">
-        <div class="stat-card" style="background: linear-gradient(135deg, #b45309, #fbbf24)">
-          <div>
-            <div class="stat-value">{{ info.basic?.slowQueries ?? 0 }}</div>
-            <div class="stat-label">慢查询</div>
-          </div>
-          <el-icon class="stat-icon"><Timer /></el-icon>
-        </div>
-      </el-col>
-      <el-col :xs="12" :md="6">
-        <div class="stat-card" style="background: linear-gradient(135deg, #6d28d9, #a78bfa)">
-          <div>
-            <div class="stat-value">{{ days(info.basic?.uptime) }}</div>
-            <div class="stat-label">运行天数</div>
-          </div>
-          <el-icon class="stat-icon"><Clock /></el-icon>
-        </div>
+
+      <el-col :xs="24" :lg="12">
+        <el-card shadow="never">
+          <template #header>连接池 (HikariCP)</template>
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="活跃">{{ info.pool?.active ?? '-' }}</el-descriptions-item>
+            <el-descriptions-item label="空闲">{{ info.pool?.idle ?? '-' }}</el-descriptions-item>
+            <el-descriptions-item label="总数">{{ info.pool?.total ?? '-' }}</el-descriptions-item>
+            <el-descriptions-item label="最大">{{ info.pool?.max ?? '-' }}</el-descriptions-item>
+            <el-descriptions-item label="等待线程">{{ info.pool?.waiting ?? '-' }}</el-descriptions-item>
+            <el-descriptions-item label="池名称">{{ info.pool?.poolName ?? '-' }}</el-descriptions-item>
+          </el-descriptions>
+        </el-card>
       </el-col>
     </el-row>
 
-    <el-row :gutter="16" class="mt16">
-      <el-col :xs="24" :md="12">
+    <el-row :gutter="16">
+      <el-col :xs="24" :lg="12">
         <el-card shadow="never">
           <template #header>基础信息</template>
           <el-descriptions :column="1" border>
@@ -270,20 +293,27 @@ onMounted(() => {
 .status-item {
   display: flex;
   font-size: 12px;
-  border-bottom: 1px solid #f8fafc;
+  border-bottom: 1px solid color-mix(in srgb, var(--tech-blue) 14%, transparent);
 
   .key {
     width: 280px;
     padding: 5px 10px;
-    color: #64748b;
-    background: #f8fafc;
+    color: var(--tech-text-dim);
+    background: color-mix(in srgb, var(--tech-blue) 8%, transparent);
     flex-shrink: 0;
+    word-break: break-all;
   }
 
   .value {
     padding: 5px 10px;
-    color: #111827;
+    color: var(--tech-text);
     word-break: break-all;
+  }
+}
+
+@media (max-width: 992px) {
+  .status-item .key {
+    width: 150px;
   }
 }
 </style>

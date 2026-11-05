@@ -176,7 +176,7 @@ onMounted(getList)
 <style scoped>
 .notice-content {
   line-height: 1.8;
-  color: #374151;
+  color: var(--lp-text);
   max-height: 60vh;
   overflow: auto;
 }

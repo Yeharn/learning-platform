@@ -21,15 +21,21 @@
   align-items: center;
   justify-content: center;
   gap: 18px;
-  background: #f8fafc;
+  background: transparent;
 }
 .code {
   font-size: 96px;
   font-weight: 800;
-  color: #4f46e5;
+  color: var(--lp-primary);
   letter-spacing: 4px;
+  text-shadow: 0 12px 32px color-mix(in srgb, var(--lp-primary) 30%, transparent);
 }
 p {
-  color: #6b7280;
+  color: var(--lp-text-muted);
+}
+@media (max-width: 768px) {
+  .code {
+    font-size: 64px;
+  }
 }
 </style>

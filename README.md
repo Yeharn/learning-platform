@@ -782,6 +782,29 @@ logs/
 - 玻璃拟态：卡片 / 搜索栏 / 表格容器 / 弹层统一 `backdrop-filter: blur()` + 半透明背景 + 大圆角，按钮与表单控件圆润化，背景叠加登录页同源的流动光斑动画
 - 切换入口：Navbar 主题下拉（色点预览），侧边栏、布局背景随主题变量联动
 
+### 18.1 组件尺寸与语义色体系（v1.1）
+
+- 尺寸令牌：`--el-component-size: 34px`（small 28 / large 40）与 `--el-font-size-base: 13px` 全局统一，按钮 / 输入 / 选择 / 表格行 / 分页 / 标签高度随令牌联动；胶囊按钮（`border-radius: 100px`）+ 语义色投影 + 悬浮微动效
+- 语义色令牌：`--lp-success / warning / danger / info` 全主题稳定，暗夜主题自动提亮；业务页面禁止写死色值，一律使用 `var()` 或 `color-mix(in srgb, var(--lp-primary) n%, transparent)` 派生
+- 表面层次：`--lp-surface / surface-hover / surface-sunken / border / divider` 五级表面变量，表格表头 / 描述列表 / 输入框底纹全部接入
+- 统计卡配色由主题派生（`sc-primary / sc-info / sc-success / sc-warning / sc-danger / sc-violet / sc-cyan / sc-slate`），切换主题即时生效
+- 图表颜色随主题：控制台 ECharts 轴线 / 标签 / 主色 / 面积渐变 / 饼图色板均通过 `getComputedStyle` 读取主题变量，`watch(theme)` 自动重绘
+
+### 18.2 多分辨率适配（v1.1）
+
+- 超宽屏 ≥1920：内容区 `max-width: 1760px` 居中，避免表格过度拉伸
+- 平板 ≤992：侧边栏自动折叠为 64px 图标模式（布局监听 `resize`，不覆盖用户偏好）；搜索表单两列布局（`:has(.el-button)` 排除按钮项），表格容器横向滚动，弹窗 92% / 抽屉 86% 宽
+- 手机 ≤768：搜索表单单列、分页居中并隐藏每页条数与跳页、`.hide-sm` 工具类隐藏次要内容、面包屑与用户名自动隐藏（Navbar `compact` 模式）
+- 断点内全局兜底：`.el-dialog` / `.el-drawer` / `.el-message-box` 宽度自适应，图表高度压缩
+
+### 18.3 监控中心科技风（v1.1，`src/styles/monitor.scss`）
+
+- `.tech-page` 深空渐变背景 + 网格光效（`mask` 渐隐）+ 循环扫描光带，固定深色观感、脱离主题切换
+- `.tech-header` 霓虹标题（呼吸灯脉冲点 + 发光文字 + 英文副标）、`.tech-metrics` 自动栅格指标卡（DIN 数字字体 + 霓虹光晕，按阈值 `is-warn / is-danger` 变色）
+- `.tech-page` 内 Element Plus 组件（卡片 / 表格 / 描述列表 / 进度条 / 输入框 / 分页 / 标签）统一深色玻璃化：卡片顶部霓虹渐变线、表格 hover 高亮、输入框霓虹描边
+- `.tech-gauge` 环形仪表（进度颜色按压力阈值读取主题语义色）、`.tech-kv` 键值行、`.tech-grid` 响应式栅格
+- 监控页进度条颜色（CPU / 内存 / 磁盘）读取 `--tech-cyan / --lp-warning / --lp-danger`，主题切换 + 10 秒轮询后自动同步
+
 ---
 
 ## 十九、已验证项
@@ -790,6 +813,7 @@ logs/
 - 网关端到端链路：验证码 → 登录 → `/auth/info` → `/auth/routers` → 用户/角色/菜单/字典/参数/公告/数据源/日志/在线/工作台/代码生成/三类监控接口均返回 `200`
 - 权限校验：`test` 用户（`common` 角色）访问 `/system/user/list`、`/monitor/server` 正常，访问 `/system/role/list`、`/system/menu/list` 返回 `403`，符合预期
 - 前端 `vue-tsc --noEmit` 通过，`vite build` 产物正常生成
+- UI 体系：1920 / 1024 / 414 三档分辨率截图验证（侧边栏自动折叠、搜索表单两列转单列、面包屑与用户名隐藏）；`aurora` / `violet` 主题切换后统计卡、图表、侧边栏即时联动；监控中心（服务监控 / Redis / 在线用户）深色科技风、指标卡阈值变色与仪表盘配色正常
 - Knife4j：网关 `/doc.html`（`200`）与 `/v3/api-docs/swagger-config` 正常，聚合分组为「系统服务 / 监控服务 / 文件服务 / 流程服务」，四个 `/lp-xxx/v3/api-docs` 均返回 `200`，Bearer 安全方案生效；`/auth/routers` 返回「接口文档」外链菜单（`meta.link`）
 - 文件服务（lp-file，9203）：`/file/upload` 返回 `url=/files/file/202611/{uuid}.txt`、`storageType=local`，`/file/list` 可分页查到记录，`/file/mode` 返回 `local` 与本地根目录 `C:/lp/upload`，静态资源 `/files/**` 直连返回 `200`
 - 消息中心：发送返回「已发送给 1 位用户」，未读数 `1`，标记已读后归零；`sys_message` 表结构已补齐 `update_by / update_time`
