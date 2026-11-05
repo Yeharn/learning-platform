@@ -1,14 +1,14 @@
 /**
  * @Author: Yeharn
- * @Date:2026-11-04
+ * @Date:2026-11-05
  * @Version: 1.0.0
- * @Description: 系统服务 - 定时任务
+ * @Description: 定时任务服务 - 任务处理器接口
  */
 
-package org.yeharn.lp.system.job;
+package org.yeharn.lp.job.core;
 
 /**
- * 内置定时任务处理器接口，实现类注册为 Spring Bean 后即可在「定时任务」中通过 Bean 名称调度
+ * 定时任务处理器：实现类注册为 Spring Bean 后即可在「定时任务」中通过 Bean 名称调度
  */
 public interface LpJob {
 

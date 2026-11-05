@@ -30,3 +30,7 @@ export function mysqlLongQueries(threshold = 3) {
 export function mysqlKill(threadId: number | string) {
   return request.post<any>('/monitor/mysql/kill', null, { params: { threadId } })
 }
+
+export function serviceOverview() {
+  return request.get<any>('/monitor/service')
+}

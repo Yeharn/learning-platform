@@ -78,6 +78,15 @@ export function changeJobStatus(data: any) {
 export function runJob(jobId: number | string) {
   return request.post(`/tool/job/run/${jobId}`)
 }
+export function previewJobCron(cron: string, count = 6) {
+  return request.get<string[]>('/tool/job/preview', { params: { cron, count } })
+}
+export function listJobLog(params: any) {
+  return request.get<any>('/tool/job/log/list', { params })
+}
+export function jobLogDetail(logId: number | string) {
+  return request.get<any>(`/tool/job/log/${logId}`)
+}
 
 /* ---------------- 流程引擎（lp-flow / FlowLong） ---------------- */
 export function flowDefinitions(keyword?: string) {

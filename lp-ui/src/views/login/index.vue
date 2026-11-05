@@ -16,7 +16,7 @@
           <img src="/logo.svg" alt="logo" />
           <div>
             <h1>Learning Platform</h1>
-            <p>Spring Cloud Alibaba · Sa-Token · MyBatis-Flex</p>
+            <p>Spring Cloud Netflix · Sa-Token · MyBatis-Flex</p>
           </div>
         </div>
 

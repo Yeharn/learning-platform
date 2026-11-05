@@ -405,6 +405,8 @@ CREATE TABLE `sys_job` (
   `job_param`       varchar(255) DEFAULT '' COMMENT '任务参数',
   `cron_expression` varchar(64) NOT NULL COMMENT 'cron表达式',
   `status`          char(1)     DEFAULT '0' COMMENT '状态(0正常 1暂停)',
+  `last_run_time`   datetime    DEFAULT NULL COMMENT '上次运行时间',
+  `last_status`     char(1)     DEFAULT NULL COMMENT '上次运行状态(0成功 1失败)',
   `remark`          varchar(500) DEFAULT NULL COMMENT '备注',
   `create_by`       varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time`     datetime    DEFAULT NULL COMMENT '创建时间',
@@ -412,6 +414,28 @@ CREATE TABLE `sys_job` (
   `update_time`     datetime    DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`job_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='内置定时任务表';
+
+DROP TABLE IF EXISTS `sys_job_log`;
+CREATE TABLE `sys_job_log` (
+  `log_id`          bigint       NOT NULL AUTO_INCREMENT COMMENT '批次号',
+  `job_id`          bigint       NOT NULL COMMENT '任务ID',
+  `job_name`        varchar(64)  DEFAULT '' COMMENT '任务名称',
+  `job_bean`        varchar(100) DEFAULT '' COMMENT '处理器Bean名称',
+  `job_param`       varchar(255) DEFAULT '' COMMENT '运行参数',
+  `cron_expression` varchar(64)  DEFAULT '' COMMENT 'cron表达式',
+  `trigger_type`    char(1)      DEFAULT '0' COMMENT '触发方式(0自动 1手动)',
+  `trigger_by`      varchar(64)  DEFAULT 'system' COMMENT '触发人',
+  `status`          char(1)      DEFAULT '0' COMMENT '运行状态(0成功 1失败)',
+  `start_time`      datetime     DEFAULT NULL COMMENT '开始时间',
+  `end_time`        datetime     DEFAULT NULL COMMENT '结束时间',
+  `cost_time`       bigint       DEFAULT 0 COMMENT '耗时(毫秒)',
+  `result`          varchar(2000) DEFAULT NULL COMMENT '执行结果',
+  `error_msg`       varchar(2000) DEFAULT NULL COMMENT '异常信息',
+  `create_time`     datetime     DEFAULT NULL COMMENT '创建时间',
+  PRIMARY KEY (`log_id`),
+  KEY `idx_job_id` (`job_id`),
+  KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='定时任务运行日志表';
 
 -- ============================================================
 -- 初始化数据
@@ -457,6 +481,7 @@ INSERT INTO `sys_menu` (`menu_id`,`menu_name`,`parent_id`,`order_num`,`path`,`co
 (203,'服务监控',2,4,'server','monitor/server/index',NULL,0,1,'C','0','0','monitor:server:list','Cpu',NULL,'admin',NOW()),
 (204,'Redis监控',2,5,'redis','monitor/redis/index',NULL,0,1,'C','0','0','monitor:redis:list','DataLine',NULL,'admin',NOW()),
 (205,'MySQL监控',2,6,'mysql','monitor/mysql/index',NULL,0,1,'C','0','0','monitor:mysql:list','Coin',NULL,'admin',NOW()),
+(206,'服务注册监控',2,7,'service','monitor/service/index',NULL,0,1,'C','0','0','monitor:service:list','DataAnalysis','Eureka 注册中心服务健康监控','admin',NOW()),
 
 (300,'代码生成',3,1,'gen','tool/gen/index',NULL,0,1,'C','0','0','tool:gen:list','MagicStick',NULL,'admin',NOW()),
 
@@ -528,6 +553,7 @@ INSERT INTO `sys_menu` (`menu_id`,`menu_name`,`parent_id`,`order_num`,`path`,`co
 (109,'消息中心',1,10,'message','system/message/index',NULL,0,1,'C','0','0','system:message:list','ChatDotRound',NULL,'admin',NOW()),
 (301,'定时任务',3,2,'job','tool/job/index',NULL,0,1,'C','0','0','tool:job:list','Timer',NULL,'admin',NOW()),
 (302,'流程管理',3,3,'flow','tool/flow/index',NULL,0,1,'C','0','0','tool:flow:list','Guide',NULL,'admin',NOW()),
+(303,'任务运行日志',3,4,'job-log','tool/job/log',NULL,0,1,'C','1','0','tool:job:list','Document','定时任务运行批次（由任务列表跳转，默认隐藏）','admin',NOW()),
 (1080,'文件上传',108,1,'','',NULL,0,1,'F','0','0','system:file:upload',NULL,NULL,'admin',NOW()),
 (1081,'文件删除',108,2,'','',NULL,0,1,'F','0','0','system:file:remove',NULL,NULL,'admin',NOW()),
 (1082,'存储模式切换',108,3,'','',NULL,0,1,'F','0','0','system:file:mode',NULL,NULL,'admin',NOW()),
@@ -539,16 +565,18 @@ INSERT INTO `sys_menu` (`menu_id`,`menu_name`,`parent_id`,`order_num`,`path`,`co
 (3013,'任务删除',301,4,'','',NULL,0,1,'F','0','0','tool:job:remove',NULL,NULL,'admin',NOW()),
 (3014,'执行一次',301,5,'','',NULL,0,1,'F','0','0','tool:job:run',NULL,NULL,'admin',NOW()),
 (3015,'任务启停',301,6,'','',NULL,0,1,'F','0','0','tool:job:changeStatus',NULL,NULL,'admin',NOW()),
+(3030,'运行日志查询',303,1,'','',NULL,0,1,'F','0','0','tool:job:list',NULL,NULL,'admin',NOW()),
 (3020,'流程部署',302,1,'','',NULL,0,1,'F','0','0','tool:flow:deploy',NULL,NULL,'admin',NOW()),
 (3021,'流程发起',302,2,'','',NULL,0,1,'F','0','0','tool:flow:start',NULL,NULL,'admin',NOW()),
 (3022,'流程办理',302,3,'','',NULL,0,1,'F','0','0','tool:flow:execute',NULL,NULL,'admin',NOW()),
 (3023,'流程删除',302,4,'','',NULL,0,1,'F','0','0','tool:flow:remove',NULL,NULL,'admin',NOW()),
-(1151,'慢SQL治理',205,1,'','',NULL,0,1,'F','0','0','monitor:mysql:kill',NULL,NULL,'admin',NOW());
+(1151,'慢SQL治理',205,1,'','',NULL,0,1,'F','0','0','monitor:mysql:kill',NULL,NULL,'admin',NOW()),
+(1160,'服务注册监控查询',206,1,'','',NULL,0,1,'F','0','0','monitor:service:query',NULL,NULL,'admin',NOW());
 
 -- 超级管理员拥有全部菜单；普通用户：用户管理(只读) + 日志/服务监控
 INSERT INTO `sys_role_menu` (`role_id`,`menu_id`) SELECT 1, menu_id FROM `sys_menu`;
 INSERT INTO `sys_role_menu` (`role_id`,`menu_id`) VALUES
-(2,1),(2,100),(2,1000),(2,2),(2,201),(2,1110),(2,202),(2,1120),(2,203),(2,1130),
+(2,1),(2,100),(2,1000),(2,2),(2,201),(2,1110),(2,202),(2,1120),(2,203),(2,1130),(2,206),(2,1160),
 (3,1),(3,107),(3,1070),(3,1074),(3,2),(2,200),(2,109),(3,1151);
 
 INSERT INTO `sys_dict_type` (`dict_name`,`dict_type`,`status`,`remark`,`create_by`,`create_time`) VALUES
@@ -592,8 +620,8 @@ INSERT INTO `sys_config` (`config_name`,`config_key`,`config_value`,`config_type
 ('消息中心-推送模式','sys.message.mode','inner','Y','消息推送模式(inner站内信/email邮件/websocket实时推送)','admin',NOW());
 
 INSERT INTO `sys_job` (`job_id`,`job_name`,`job_bean`,`job_param`,`cron_expression`,`status`,`remark`,`create_by`,`create_time`) VALUES
-(1,'日志月表预创建','logTablePrepareJob','','0 0 1 25 * ?','0','每月25日预创建下月日志分表','admin',NOW()),
-(2,'过期消息清理','messageCleanupJob','30','0 30 2 * * ?','0','每天02:30清理30天前的已读消息','admin',NOW());
+(1,'运行日志清理','jobLogCleanupJob','30','0 0 3 * * ?','0','每天 03:00 清理 30 天前的任务运行日志','admin',NOW()),
+(2,'服务健康巡检','serviceHealthCheckJob','','0 */10 * * * ?','0','每 10 分钟巡检注册中心全部实例健康状态','admin',NOW());
 
 INSERT INTO `sys_notice` (`notice_title`,`notice_type`,`notice_content`,`status`,`create_by`,`create_time`) VALUES
 ('欢迎使用 Learning Platform','2','<p>Learning Platform 是基于 Spring Boot 3 + Spring Cloud Alibaba + Sa-Token + MyBatis-Flex 的微服务权限管理系统。</p><p>默认账号：admin / admin123</p>','0','admin',NOW()),

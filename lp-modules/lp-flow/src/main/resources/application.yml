@@ -17,19 +17,6 @@ spring:
   # 环境由 Maven profile 打包时注入：mvn package -P dev|test|prod
   profiles:
     active: @profiles.active@
-  config:
-    import:
-      - optional:nacos:lp-flow.yaml
-  cloud:
-    nacos:
-      server-addr: ${NACOS_ADDR:127.0.0.1:8848}
-      discovery:
-        namespace: public
-        group: DEFAULT_GROUP
-      config:
-        namespace: public
-        group: DEFAULT_GROUP
-        file-extension: yaml
   jackson:
     time-zone: GMT+8
 
@@ -105,3 +92,13 @@ logging:
     org.yeharn.lp: info
     com.baomidou.mybatisplus: warn
     org.dromara.warm: info
+# Eureka 注册中心（Spring Cloud Netflix）
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_ADDR:http://127.0.0.1:8849/eureka}
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30

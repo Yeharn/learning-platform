@@ -1,18 +1,18 @@
 <!--
   @Author: Yeharn
   @Date:2026-11-04
-  @Version: 1.0.0
-  @Description: 后台整体布局容器
+  @Version: 1.1.0
+  @Description: 后台整体布局容器：多分辨率自适应（窄屏自动折叠侧栏、移动端紧凑头部）
 -->
 
 <template>
   <el-container class="layout">
-    <el-aside :width="appStore.sidebarCollapsed ? '64px' : '220px'" class="layout-aside">
-      <Sidebar />
+    <el-aside :width="asideWidth" class="layout-aside">
+      <Sidebar :collapsed="effectiveCollapsed" />
     </el-aside>
     <el-container class="layout-body">
-      <el-header height="56px" class="layout-header">
-        <Navbar />
+      <el-header :height="headerHeight" class="layout-header">
+        <Navbar :compact="isMobile" />
       </el-header>
       <el-main class="layout-main">
         <router-view v-slot="{ Component }">
@@ -26,11 +26,28 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import Sidebar from './components/Sidebar.vue'
 import Navbar from './components/Navbar.vue'
 import { useAppStore } from '@/stores/app'
 
 const appStore = useAppStore()
+
+const viewportWidth = ref(window.innerWidth)
+
+/** 平板及以下自动折叠侧边栏（不覆盖用户偏好） */
+const isNarrow = computed(() => viewportWidth.value < 992)
+const isMobile = computed(() => viewportWidth.value < 768)
+const effectiveCollapsed = computed(() => appStore.sidebarCollapsed || isNarrow.value)
+const asideWidth = computed(() => (effectiveCollapsed.value ? '64px' : '220px'))
+const headerHeight = computed(() => (isMobile.value ? '52px' : '56px'))
+
+function onResize() {
+  viewportWidth.value = window.innerWidth
+}
+
+onMounted(() => window.addEventListener('resize', onResize, { passive: true }))
+onBeforeUnmount(() => window.removeEventListener('resize', onResize))
 </script>
 
 <style scoped lang="scss">
@@ -58,6 +75,7 @@ const appStore = useAppStore()
   padding: 0 16px;
   display: flex;
   align-items: center;
+  transition: height 0.2s ease;
 }
 
 .layout-main {
@@ -79,5 +97,11 @@ const appStore = useAppStore()
 .fade-transform-leave-to {
   opacity: 0;
   transform: translateX(12px);
+}
+
+@media (max-width: 768px) {
+  .layout-header {
+    padding: 0 10px;
+  }
 }
 </style>

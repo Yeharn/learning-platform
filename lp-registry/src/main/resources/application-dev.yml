@@ -1,0 +1,13 @@
+# @Author: Yeharn
+# @Date:2026-11-05
+# @Version: 1.0.0
+# @Description: 注册中心 dev 环境配置：单机开发，快速感知实例上下线
+
+eureka:
+  server:
+    # 关闭自我保护，实例失联后快速剔除，避免网关路由到已下线实例
+    enable-self-preservation: false
+    # 每 10s 执行一次过期实例剔除
+    eviction-interval-timer-in-ms: 10000
+    # 单机无同步节点，跳过同步等待，消除启动期警告
+    wait-time-in-ms-when-sync-empty: 0

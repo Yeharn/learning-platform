@@ -1,12 +1,13 @@
 /*
  * @Author: Yeharn
  * @Date:2026-11-04
- * @Version: 1.0.0
- * @Description: 主题变量：5 套配色方案与暗黑模式覆盖
+ * @Version: 1.1.0
+ * @Description: 主题变量：5 套配色方案 + 语义色 + 尺寸令牌 + 暗黑模式覆盖
  */
 
 /* ============================================================
  * 主题系统：通过 html[data-theme] 切换 CSS 变量，与登录页渐变风格适配
+ * 组件颜色统一使用语义变量，禁止在业务页面写死色值
  * ============================================================ */
 
 :root {
@@ -20,17 +21,79 @@
   --lp-card-border: rgba(255, 255, 255, 0.6);
   --lp-card-shadow: 0 8px 32px rgba(31, 60, 122, 0.08);
   --lp-text: #1f2937;
+  --lp-text-secondary: #5b6577;
+  --lp-text-muted: #8a94a6;
   --lp-sidebar-bg: rgba(15, 23, 42, 0.94);
   --lp-sidebar-text: #cbd5e1;
   --lp-blob-opacity: 0.35;
 
-  /* Element Plus 联动 */
+  /* 语义色（全主题保持一致，保证状态色语义稳定） */
+  --lp-success: #10b981;
+  --lp-success-light: #34d399;
+  --lp-warning: #f59e0b;
+  --lp-warning-light: #fbbf24;
+  --lp-danger: #ef4444;
+  --lp-danger-light: #f87171;
+  --lp-info: #0ea5e9;
+
+  /* 表面与边框层次 */
+  --lp-surface: #ffffff;
+  --lp-surface-hover: rgba(59, 130, 246, 0.06);
+  --lp-surface-sunken: rgba(15, 35, 75, 0.03);
+  --lp-border: rgba(15, 35, 75, 0.08);
+  --lp-border-strong: rgba(15, 35, 75, 0.16);
+  --lp-divider: rgba(15, 35, 75, 0.06);
+
+  /* 间距与圆角令牌 */
+  --lp-space-xs: 6px;
+  --lp-space-sm: 10px;
+  --lp-space: 16px;
+  --lp-space-lg: 24px;
+  --lp-radius-sm: 8px;
+  --lp-radius: 12px;
+  --lp-radius-lg: 16px;
+
+  /* Element Plus 联动：主色与尺寸体系 */
   --el-color-primary: var(--lp-primary);
   --el-color-primary-light-3: var(--lp-primary-light);
   --el-color-primary-dark-2: var(--lp-primary-dark);
+  --el-color-success: var(--lp-success);
+  --el-color-warning: var(--lp-warning);
+  --el-color-danger: var(--lp-danger);
+  --el-color-error: var(--lp-danger);
+  --el-color-info: var(--lp-info);
   --el-border-radius-base: 10px;
   --el-border-radius-small: 8px;
   --el-border-radius-round: 100px;
+  --el-component-size: 34px;
+  --el-component-size-small: 28px;
+  --el-component-size-large: 40px;
+  --el-font-size-base: 13px;
+  --el-font-size-small: 12px;
+  --el-font-size-medium: 14px;
+  --el-text-color-primary: var(--lp-text);
+  --el-text-color-regular: var(--lp-text-secondary);
+  --el-text-color-secondary: var(--lp-text-muted);
+  --el-text-color-placeholder: var(--lp-text-muted);
+  --el-border-color: var(--lp-border-strong);
+  --el-border-color-light: var(--lp-border);
+  --el-border-color-lighter: var(--lp-divider);
+  --el-border-color-extra-light: var(--lp-divider);
+  --el-fill-color-light: var(--lp-surface-sunken);
+  --el-fill-color-lighter: var(--lp-surface-sunken);
+  --el-fill-color-blank: var(--lp-surface);
+
+  /* 监控科技风 */
+  --tech-bg-from: #101c33;
+  --tech-bg-to: #070d19;
+  --tech-card-bg: rgba(16, 30, 54, 0.66);
+  --tech-card-border: rgba(90, 160, 255, 0.2);
+  --tech-glow: rgba(64, 158, 255, 0.45);
+  --tech-cyan: #22d3ee;
+  --tech-blue: #4f8cff;
+  --tech-grid: rgba(90, 160, 255, 0.08);
+  --tech-text: #d8e6ff;
+  --tech-text-dim: #8aa4c8;
 }
 
 /* 极光蓝（默认） */
@@ -41,6 +104,7 @@
   --lp-bg-start: #eef4ff;
   --lp-bg-mid: #e4f0ff;
   --lp-bg-end: #f5f8ff;
+  --lp-sidebar-bg: rgba(15, 23, 42, 0.94);
 }
 
 /* 暮光紫 */
@@ -51,6 +115,12 @@
   --lp-bg-start: #f3efff;
   --lp-bg-mid: #ece5ff;
   --lp-bg-end: #f8f6ff;
+  --lp-sidebar-bg: rgba(30, 20, 60, 0.95);
+  --tech-card-border: rgba(167, 139, 250, 0.22);
+  --tech-glow: rgba(139, 92, 246, 0.45);
+  --tech-blue: #8b5cf6;
+  --tech-cyan: #c4b5fd;
+  --tech-grid: rgba(167, 139, 250, 0.09);
 }
 
 /* 青碧 */
@@ -61,6 +131,12 @@
   --lp-bg-start: #ecfdf5;
   --lp-bg-mid: #e3faf0;
   --lp-bg-end: #f4fcf9;
+  --lp-sidebar-bg: rgba(6, 40, 32, 0.95);
+  --tech-card-border: rgba(52, 211, 153, 0.22);
+  --tech-glow: rgba(16, 185, 129, 0.45);
+  --tech-blue: #10b981;
+  --tech-cyan: #5eead4;
+  --tech-grid: rgba(52, 211, 153, 0.09);
 }
 
 /* 玫瑰 */
@@ -71,6 +147,12 @@
   --lp-bg-start: #fff1f3;
   --lp-bg-mid: #ffe9ee;
   --lp-bg-end: #fff7f8;
+  --lp-sidebar-bg: rgba(46, 12, 22, 0.95);
+  --tech-card-border: rgba(251, 113, 133, 0.22);
+  --tech-glow: rgba(244, 63, 94, 0.4);
+  --tech-blue: #f43f5e;
+  --tech-cyan: #fda4af;
+  --tech-grid: rgba(251, 113, 133, 0.09);
 }
 
 /* 暗夜 */
@@ -85,15 +167,35 @@
   --lp-card-border: rgba(148, 163, 184, 0.16);
   --lp-card-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
   --lp-text: #e2e8f0;
+  --lp-text-secondary: #b6c2d4;
+  --lp-text-muted: #8494ab;
   --lp-blob-opacity: 0.22;
+  --lp-sidebar-bg: rgba(9, 14, 26, 0.96);
+
+  --lp-success: #34d399;
+  --lp-warning: #fbbf24;
+  --lp-danger: #fb7185;
+  --lp-info: #38bdf8;
+
+  --lp-surface: #16203a;
+  --lp-surface-hover: rgba(129, 140, 248, 0.12);
+  --lp-surface-sunken: rgba(148, 163, 184, 0.06);
+  --lp-border: rgba(148, 163, 184, 0.18);
+  --lp-border-strong: rgba(148, 163, 184, 0.3);
+  --lp-divider: rgba(148, 163, 184, 0.12);
+
   --el-bg-color: #16203a;
   --el-bg-color-overlay: #1a2647;
+  --el-bg-color-page: #0f172a;
   --el-fill-color-blank: #16203a;
-  --el-text-color-primary: #e2e8f0;
-  --el-text-color-regular: #cbd5e1;
-  --el-border-color: rgba(148, 163, 184, 0.25);
-  --el-border-color-light: rgba(148, 163, 184, 0.18);
-  --el-border-color-lighter: rgba(148, 163, 184, 0.12);
+  --el-fill-color: #1c2949;
+  --el-fill-color-light: rgba(148, 163, 184, 0.08);
+  --el-fill-color-lighter: rgba(148, 163, 184, 0.05);
+  --el-mask-color: rgba(6, 11, 22, 0.72);
+  --el-box-shadow-light: 0 6px 24px rgba(0, 0, 0, 0.45);
+
+  --tech-bg-from: #0a1526;
+  --tech-bg-to: #050912;
 }
 
 html.lp-dark {

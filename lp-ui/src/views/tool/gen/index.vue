@@ -425,8 +425,8 @@ onMounted(getList)
 .file-list {
   width: 300px;
   flex-shrink: 0;
-  border: 1px solid #eef2f7;
-  border-radius: 6px;
+  border: 1px solid var(--lp-border);
+  border-radius: var(--lp-radius-sm);
   overflow: auto;
   padding: 6px;
 }
@@ -437,18 +437,25 @@ onMounted(getList)
   gap: 6px;
   padding: 8px 10px;
   font-size: 12px;
-  border-radius: 4px;
+  border-radius: var(--lp-radius-sm);
   cursor: pointer;
-  color: #4b5563;
+  color: var(--lp-text-secondary);
   word-break: break-all;
+  transition: background 0.15s ease, color 0.15s ease;
 
   &:hover {
-    background: #f8fafc;
+    background: var(--lp-surface-sunken);
   }
 
   &.active {
-    background: #eef2ff;
-    color: #4f46e5;
+    background: color-mix(in srgb, var(--lp-primary) 12%, transparent);
+    color: var(--lp-primary);
+  }
+}
+
+@media (max-width: 992px) {
+  .file-list {
+    width: 180px;
   }
 }
 

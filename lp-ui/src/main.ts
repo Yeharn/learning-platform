@@ -14,8 +14,9 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import App from './App.vue'
 import router from './router'
 import { setupDirectives } from './directive/permission'
-import './styles/index.scss'
 import './styles/themes.scss'
+import './styles/index.scss'
+import './styles/monitor.scss'
 
 const app = createApp(App)
 

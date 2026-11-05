@@ -54,8 +54,8 @@ CREATE TABLE IF NOT EXISTS `lp_flow_comment` (
 -- 5. 菜单补充：流程定义页新增「表单设计」权限，任务页新增「流程监控」入口
 DELETE FROM `sys_menu` WHERE `menu_id` IN (3314, 3315);
 INSERT INTO `sys_menu` (`menu_id`, `menu_name`, `parent_id`, `order_num`, `path`, `component`, `menu_type`, `perms`, `icon`, `visible`, `status`, `create_by`, `create_time`, `remark`)
-VALUES (3314, '表单设计', 3301, 5, NULL, NULL, 'F', 'tool:flow:form', '#', 0, 0, 'admin', NOW(), '流程表单模板设计'),
-       (3315, '流程监控', 3302, 5, NULL, NULL, 'F', 'tool:flow:monitor', '#', 0, 0, 'admin', NOW(), '流程实例强制跳转与终止');
+VALUES (3314, '表单设计', 3301, 5, NULL, NULL, 'F', 'tool:flow:form', 'Files', 0, 0, 'admin', NOW(), '流程表单模板设计'),
+       (3315, '流程监控', 3302, 5, NULL, NULL, 'F', 'tool:flow:monitor', 'Monitor', 0, 0, 'admin', NOW(), '流程实例强制跳转与终止');
 
 -- 6. 角色菜单授权：超级管理员角色自动拥有新权限（若使用菜单表驱动鉴权）
 INSERT INTO `sys_role_menu` (`role_id`, `menu_id`)

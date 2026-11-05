@@ -121,13 +121,9 @@
     <logger name="io.netty" level="INFO">
         <appender-ref ref="FRAMEWORK_FILE"/>
     </logger>
-    <logger name="com.alibaba.nacos" level="INFO">
+    <logger name="com.netflix.discovery" level="INFO">
         <appender-ref ref="FRAMEWORK_FILE"/>
-    </logger>
-    <logger name="com.alibaba.cloud" level="INFO">
-        <appender-ref ref="FRAMEWORK_FILE"/>
-    </logger>
-    <logger name="cn.dev33.satoken" level="INFO">
+    </logger>    <logger name="cn.dev33.satoken" level="INFO">
         <appender-ref ref="FRAMEWORK_FILE"/>
     </logger>
     <logger name="io.lettuce" level="INFO">

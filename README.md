@@ -1,7 +1,7 @@
 # Learning Platform 微服务权限管理系统
 
-基于 **Spring Boot 3 + Spring Cloud Alibaba + Sa-Token + MyBatis-Flex + Vue 3 + TypeScript** 的前后端分离微服务权限管理系统。
-提供 RBAC 权限模型、动态菜单路由、数据权限、多数据源切换、代码生成器、服务器 / Redis / MySQL 监控等能力。
+基于 **Spring Boot 3 + Spring Cloud Netflix (Eureka) + Sa-Token + MyBatis-Flex + Vue 3 + TypeScript** 的前后端分离微服务权限管理系统。
+提供 RBAC 权限模型、动态菜单路由、数据权限、多数据源切换、代码生成器、服务器 / Redis / MySQL / 服务注册监控等能力。
 
 ---
 
@@ -14,7 +14,7 @@
 | JDK | Java | 21 |
 | 基础框架 | Spring Boot | 3.2.5 |
 | 微服务 | Spring Cloud | 2023.0.1 |
-| 微服务 | Spring Cloud Alibaba (Nacos) | 2023.0.1.0 |
+| 微服务 | Spring Cloud Netflix (Eureka) | 2023.0.1 |
 | 网关 | Spring Cloud Gateway (WebFlux) | 随 Cloud |
 | 认证鉴权 | Sa-Token（spring-boot3 / reactor-spring-boot3） | 1.38.0 |
 | ORM | MyBatis-Flex | 1.11.7 |
@@ -25,7 +25,7 @@
 | 工具库 | Hutool | 5.8.27 |
 | 接口文档 | Knife4j（OpenAPI3 + springdoc） | 4.5.0 |
 | 流程引擎 | Warm-Flow（Dromara 开源，Apache-2.0，`warm-flow-mybatis-plus-sb3-starter`） | 1.8.9 |
-| 定时任务 | Spring `ThreadPoolTaskScheduler` + XXL-JOB 执行器（可选） | 2.4.1 |
+| 定时任务 | Spring `ThreadPoolTaskScheduler` + Quartz CronExpression（独立服务 lp-job） | — |
 | 对象存储 | 本地磁盘 / MinIO / RustFS（S3 协议） | — |
 | 消息推送 | 站内信 / JavaMail / WebSocket | 随 Boot |
 | 构建 | Maven（多环境 profile，按环境打包） | 3.9+ |
@@ -65,21 +65,26 @@
         │ lp-system   :9201  │ │lp-file    │ │lp-flow      :9204  │
         │ 认证/用户/角色/菜单 │ │:9203      │ │Warm-Flow 流程引擎  │
         │ 字典/参数/部门/日志 │ │本地/MinIO │ │定义/发起/待办/历史 │
-        │ 消息中心/定时任务   │ │/RustFS    │ │                    │
+        │ 消息中心           │ │/RustFS    │ │                    │
         └─────────┬──────────┘ └─────┬─────┘ └─────────┬──────────┘
                   │                  │                 │
                   │        ┌─────────▼─────────────────▼──────┐
                   │        │ lp-monitor  :9202                │
                   │        │ 服务器 / Redis / MySQL / 慢 SQL   │
                   │        └──────────────────────────────────┘
+                  │
+                  │        ┌──────────────────────────────────┐
+                  └───────►│ lp-job      :9205                │
+                           │ 定时任务调度 / 运行批次日志       │
+                           └──────────────────────────────────┘
         ┌─────────┴────────────┐
         │                │
         ▼                ▼
-   ┌─────────┐     ┌──────────┐        ┌──────────────┐
-   │  MySQL  │     │  Redis   │        │ Nacos :8848  │
-   │ 业务库  │     │ 会话/验证码│       │ 注册 + 配置  │
-   │ +多数据源│     │ 在线用户  │        └──────────────┘
-   └─────────┘     └──────────┘
+   ┌─────────┐     ┌──────────┐        ┌────────────────┐
+   │  MySQL  │     │  Redis   │        │ lp-registry    │
+   │ 业务库  │     │ 会话/验证码│       │ Eureka :8849   │
+   │ +多数据源│     │ 在线用户  │        │ 注册中心        │
+   └─────────┘     └──────────┘        └────────────────┘
 ```
 
 ### 模块划分
@@ -91,7 +96,10 @@ LearningPlatform
 ├── sql/upgrade_v2.sql               # v2 增量升级（文件/消息/定时任务/流程菜单与表）
 ├── sql/upgrade_v3.sql               # v3 增量升级（流程中心菜单、流程沟通评论表）
 ├── sql/upgrade_v4.sql               # v4 增量升级（warm-flow 表单模板、已阅记录表与权限）
+├── sql/upgrade_v5.sql               # v5 增量升级（服务注册监控菜单）
+├── sql/upgrade_v6.sql               # v6 增量升级（任务运行日志表、上次运行字段、运行日志菜单）
 ├── sql/warm-flow/                   # Warm-Flow（Dromara）MySQL 建表脚本（flow_*）
+├── lp-registry                      # 注册中心 :8849（Eureka Server）
 ├── lp-common                        # 公共模块（被所有服务依赖）
 │   └── org.yeharn.lp.common
 │       ├── core        R / PageResult / PageQuery / BaseEntity / ServiceException / Constants
@@ -102,7 +110,8 @@ LearningPlatform
 │       └── log         @OperLog / BusinessType / OperLogAspect / OperLogEvent
 ├── lp-gateway                       # 网关 :8080
 ├── lp-modules
-│   ├── lp-system                    # 系统服务 :9201（认证/权限/消息中心/定时任务）
+│   ├── lp-system                    # 系统服务 :9201（认证/权限/消息中心）
+│   ├── lp-job                       # 定时任务服务 :9205（调度 / 运行批次日志）
 │   ├── lp-file                      # 文件服务 :9203（本地 / MinIO / RustFS）
 │   ├── lp-flow                      # 流程服务 :9204（Warm-Flow，独立数据层 MyBatis-Plus）
 │   └── lp-monitor                   # 监控服务 :9202（含慢 SQL 审计）
@@ -114,13 +123,14 @@ LearningPlatform
 | 服务 | 端口 | 说明 |
 | --- | --- | --- |
 | lp-gateway | 8080 | 统一入口，路由 + 鉴权 |
-| lp-system | 9201 | 系统业务（认证/权限/消息/定时任务） |
+| lp-system | 9201 | 系统业务（认证/权限/消息） |
 | lp-monitor | 9202 | 监控采集 |
 | lp-file | 9203 | 文件服务（本地 / MinIO / RustFS） |
 | lp-flow | 9204 | 流程服务（Warm-Flow Dromara） |
+| lp-job | 9205 | 定时任务（调度 / cron 可视化 / 运行批次日志） |
 | MySQL | 3306 | 数据库 `learning_platform` |
 | Redis | 6379 | 密码 `Redis@ZnSoft` |
-| Nacos | 8848 | 注册中心 / 配置中心 |
+| lp-registry | 8849 | 注册中心（Eureka Server，启动即用，无需数据库） |
 | lp-ui (dev) | 5173 | Vite 开发服务器 |
 
 ---
@@ -133,7 +143,6 @@ LearningPlatform
 - Maven 3.9+
 - MySQL 8.x，账号 `root / MySQL@ZnSoft`
 - Redis 7.x，密码 `Redis@ZnSoft`
-- Nacos 2.x，单机模式启动于 `127.0.0.1:8848`
 - Node.js 18+ / npm 9+
 
 ### 2. 初始化数据库
@@ -154,16 +163,12 @@ mysql -uroot -p'MySQL@ZnSoft' learning_platform < sql/upgrade_v4.sql
 
 > 操作日志与登录日志采用**按月分表**：`sys_oper_log_YYYYMM` / `sys_login_log_YYYYMM` 由服务在首次写入时自动 `CREATE TABLE ... LIKE` 创建，无需手工建月表；`sys_oper_log` / `sys_login_log` 作为历史归档表保留。
 
-### 3. 启动 Nacos
+### 3. 启动注册中心
 
 ```bash
-# Windows
-startup.cmd -m standalone
-# Linux / macOS
-sh startup.sh -m standalone
+java -jar lp-registry/target/lp-registry.jar
+# 注册中心控制台: http://127.0.0.1:8849 （纯内存注册表，无需数据库，启动即用）
 ```
-
-> 配置中心采用 `optional:nacos:lp-xxx.yaml`，Nacos 中不存在对应配置也能正常启动，便于本地开发。
 
 ### 4. 构建并启动后端
 
@@ -173,8 +178,10 @@ mvn -DskipTests clean package
 # 按环境打包：dev / test / prod
 mvn -DskipTests clean package -P prod
 
+java -jar lp-registry/target/lp-registry.jar
 java -jar lp-gateway/target/lp-gateway.jar
 java -jar lp-modules/lp-system/target/lp-system.jar
+java -jar lp-modules/lp-job/target/lp-job.jar
 java -jar lp-modules/lp-monitor/target/lp-monitor.jar
 java -jar lp-modules/lp-file/target/lp-file.jar
 java -jar lp-modules/lp-flow/target/lp-flow.jar
@@ -182,7 +189,7 @@ java -jar lp-modules/lp-flow/target/lp-flow.jar
 
 `-P dev|test|prod` 会激活 `application-{env}.yml`（见「十七、多环境打包与日志分表」），无需手工改配置。
 
-启动顺序建议：Nacos → lp-system / lp-monitor / lp-file / lp-flow → lp-gateway。也可直接在 IDE 中运行五个 `*Application` 主类。
+启动顺序建议：lp-registry → lp-system / lp-job / lp-monitor / lp-file / lp-flow → lp-gateway。也可直接在 IDE 中运行七个 `*Application` 主类。
 
 ### 5. 启动前端
 
@@ -231,13 +238,14 @@ Vite 已将 `/api` 代理到 `http://127.0.0.1:8080`（同时开启 `ws: true` �
 - **服务监控**：OSHI 采集 CPU、内存、JVM、磁盘、网络、服务器与 JVM 运行时信息，前端 10 秒自动刷新
 - **Redis 监控**：`INFO` 指标、内存、连接数、命中率、Key 数量、命令统计、持久化信息
 - **MySQL 监控**：`SHOW GLOBAL STATUS/VARIABLES`、连接数、QPS/TPS、缓冲池命中、慢查询、当前会话列表、HikariCP 连接池状态
+- **服务注册监控**：基于 Eureka 注册中心枚举全部服务与实例，并行探测各实例 `/actuator/health`，展示注册地址、健康状态、组件明细（db / redis 等）、响应耗时、注册时间、租约与元数据版本，30 秒自动刷新
 - **慢 SQL 审计**：`performance_schema` 慢 SQL 列表（SQL 文本、执行次数、总/平均/最大耗时、扫描行数、库表），长事务与长 SQL 会话列表，支持按 `threadId` **KILL** 慢 SQL / 锁表会话
 
 ### 系统工具
 
 - **代码生成器**：读取数据库表 → 导入配置 → 编辑字段 → 预览 → 下载 ZIP，支持指定数据源
 - **接口文档**：Knife4j 聚合网关文档，侧边栏外链菜单一键打开，支持 Bearer Token 在线调试
-- **定时任务**：内置 `ThreadPoolTaskScheduler` 调度（cron 表达式可视化编辑、启停、立即执行一次、下次/上次执行时间），可选接入 XXL-JOB 执行器
+- **定时任务（lp-job 独立服务）**：`ThreadPoolTaskScheduler` + Quartz CronExpression 调度（支持秒级与年字段的 6/7 段表达式）、cron 七维可视化构建（秒/分/时/日/月/周/年）并实时预览未来 6 次运行时间、启停、立即执行、上次/下次运行时间、创建人；运行批次日志独立落库（`sys_job_log`，不写系统操作日志），任务列表一键跳转查看运行状态 / 耗时 / 参数 / 结果
 - **流程中心（lp-flow 独立服务）**：仿钉钉可视化流程设计器（主干分支画布 + 属性面板 + 条件/办理人表达式 + 表单模板设计 + DefJson 导入导出）、流程定义（版本化部署）、流程实例（流程图高亮当前节点 / 审批记录 / 沟通评论 / 已阅记录 / 挂起激活终止）、我的任务（办理、任意节点驳回与退回、加签、减签、转办、委派、拿回、撤销、任意跳转、已阅）、流程历史（耗时与状态回溯）
 
 ### 工作台与个人中心
@@ -413,10 +421,11 @@ public List<Map<String, Object>> listFromSlave() {
 | `GET /monitor/mysql/slow` | 慢 SQL 审计：`performance_schema.events_statements_summary_by_digest` 聚合的 SQL 文本、执行次数、总/平均/最大耗时、扫描行数、库表 |
 | `GET /monitor/mysql/long?threshold=3` | 执行超过 N 秒的长 SQL 与长事务会话（`information_schema.processlist` + `innodb_trx`） |
 | `GET /monitor/mysql/kill?threadId=` | KILL 指定会话，用于终止慢 SQL 或锁表 SQL |
+| `GET /monitor/service` | 服务注册监控：枚举注册中心服务实例并聚合健康探测结果 |
 
-- 权限标识：`monitor:server:list`、`monitor:redis:list`、`monitor:mysql:list`、`monitor:mysql:kill`
-- 前端页面位于 `lp-ui/src/views/monitor/{server,redis,mysql}`，服务监控 10 秒轮询刷新；MySQL 页含「慢 SQL 审计」「长 SQL 与事务」Tab，KILL 按钮受 `monitor:mysql:kill` 控制
-- 数据来源：OSHI（系统）、`StringRedisTemplate` + `INFO`（Redis）、`SHOW GLOBAL STATUS/VARIABLES` + `performance_schema` + `information_schema`（MySQL）
+- 权限标识：`monitor:server:list`、`monitor:redis:list`、`monitor:mysql:list`、`monitor:mysql:kill`、`monitor:service:list`
+- 前端页面位于 `lp-ui/src/views/monitor/{server,redis,mysql,service}`，服务监控 10 秒轮询刷新、服务注册监控 30 秒自动刷新；MySQL 页含「慢 SQL 审计」「长 SQL 与事务」Tab，KILL 按钮受 `monitor:mysql:kill` 控制
+- 数据来源：OSHI（系统）、`StringRedisTemplate` + `INFO`（Redis）、`SHOW GLOBAL STATUS/VARIABLES` + `performance_schema` + `information_schema`（MySQL）、`DiscoveryClient` + 各实例 `/actuator/health`（服务注册）
 
 ---
 
@@ -440,7 +449,8 @@ public List<Map<String, Object>> listFromSlave() {
 | `sys_datasource` | 动态数据源配置 |
 | `sys_file` | 文件记录（分类、存储类型、URL、大小） |
 | `sys_message` | 站内消息（一人一条、已读标记、消息类型） |
-| `sys_job` | 定时任务（cron、调用目标、状态、上次/下次执行时间） |
+| `sys_job` | 定时任务（cron、处理器、状态、上次运行时间与状态） |
+| `sys_job_log` | 定时任务运行批次日志（触发方式/状态/起止时间/耗时/结果） |
 | `flow_definition` / `flow_node` / `flow_skip` / `flow_instance` / `flow_task` / `flow_his_task` / `flow_user` / `flow_form` | Warm-Flow 流程引擎表（`sql/warm-flow` 脚本初始化） |
 | `lp_flow_comment` | 流程沟通评论（实例维度的讨论记录） |
 | `lp_flow_form` | 流程表单模板（可视化表单设计器产物，定义通过 `form_path` 引用） |
@@ -474,7 +484,7 @@ public List<Map<String, Object>> listFromSlave() {
 | 在线 | `/online` | `GET /list`、`DELETE /{token}`（强制下线） |
 | 个人中心 | `/profile` | `GET`、`PUT`、`PUT /password` |
 | 代码生成 | `/tool/gen` | 见第七章 |
-| 定时任务 | `/tool/job` | CRUD、`PUT /changeStatus`、`POST /run/{jobId}`、`GET /info` |
+| 定时任务（lp-job） | `/tool/job` | CRUD、`PUT /changeStatus`、`POST /run/{jobId}`、`GET /info`、`GET /preview`（cron 预览）、`GET /log/list`、`GET /log/{logId}`（运行批次） |
 | 流程引擎（lp-flow） | `/flow` | `GET /definitions`、`POST /model`、`POST /deploy`、`POST /start`、`GET /tasks`、`GET /all-tasks`、`POST /tasks/{taskId}/complete`、`POST /tasks/{taskId}/reject`、`GET /instances`、`GET /history` |
 | 监控 | `/monitor` | `GET /server`、`GET /redis`、`GET /mysql`、`GET /mysql/slow`、`GET /mysql/long`、`GET /mysql/kill` |
 
@@ -532,7 +542,8 @@ lp-ui/src
     ├── system               user / role / menu / dept / dict / config / notice / datasource / file / message
     ├── monitor              server / redis / mysql / online / loginlog / operlog
     ├── tool/gen             代码生成器
-    ├── tool/job             定时任务
+    ├── tool/job             定时任务（lp-job 服务；CronBuilder 可视化构建）
+    ├── tool/job/log         任务运行批次日志
     ├── tool/flow            流程中心（definition / instance / task / history + FlowDesigner、FlowViewer 组件）
     ├── profile              个人中心
     └── error                403 / 404
@@ -560,8 +571,6 @@ server:
   port: 8080
 spring:
   cloud:
-    nacos:
-      server-addr: 127.0.0.1:8848
     gateway:
       routes:
         - id: lp-system
@@ -667,7 +676,7 @@ VITE_APP_BASE_API=/api      # 开发环境经 Vite 代理到网关 8080
 - 接口权限以后端注解为准，前端 `v-hasPerm` 仅为体验优化
 - 逻辑删除由 MyBatis-Flex 全局接管，业务代码无需手写 `del_flag` 条件
 - 操作日志通过 Spring 事件异步落库，避免阻塞主流程
-- 生产环境请修改默认密码、`aes-key`、数据库/Redis 凭据，并开启 HTTPS 与 Nacos 鉴权
+- 生产环境请修改默认密码、`aes-key`、数据库/Redis 凭据，并开启 HTTPS 与注册中心安全加固（Eureka Basic Auth 或网络隔离）
 - 生产环境建议关闭接口文档：设置 `knife4j.production=true`、`springdoc.api-docs.enabled=false`，并移除网关与业务服务中 `/doc.html`、`/v3/api-docs/**` 的白名单
 
 ---
@@ -700,13 +709,15 @@ VITE_APP_BASE_API=/api      # 开发环境经 Vite 代理到网关 8080
 
 ## 十六、定时任务与流程引擎
 
-### 16.1 定时任务（内置调度 + 可选 XXL-JOB）
+### 16.1 定时任务（独立服务 lp-job :9205）
 
-- 表 `sys_job`：`job_name`、`job_group`、`invoke_target`、`cron_expression`、`misfire_policy`、`status`、`remark`
-- 内置 Spring `ThreadPoolTaskScheduler`（`lp.job.pool-size`，默认 4）在启动时按 cron 注册全部启用任务；启停 / 改 cron 即时重排，自动回写上次与下次执行时间
-- `invoke_target` 支持 `beanName.methodName` 形式调用任意 Spring Bean，内置示例处理器 `demoJob.execute`
-- 手动执行：`POST /tool/job/run/{jobId}`；分布式调度场景设置 `lp.xxl-job.enabled=true` 并部署 xxl-job-admin（执行器端口 9999）
-- 接口：`GET /tool/job/list`、`GET /tool/job/info`、`POST /tool/job`、`PUT /tool/job`、`DELETE /tool/job/{ids}`、`PUT /tool/job/changeStatus`、`POST /tool/job/run/{jobId}`
+- 服务独立：任务调度从系统服务拆出（`lp-modules/lp-job`，端口 9205），与其他服务一样具备 dev/test/prod 配置与分类日志（business/sql/framework）；网关 `/tool/job/**` 优先路由至 lp-job
+- 调度内核：Spring `ThreadPoolTaskScheduler`（`lp.job.pool-size`）+ Quartz `CronExpression` 动态排程——每次执行后按最新配置重算下次触发，天然支持含「年」的 7 段表达式；同一任务串行执行，上一批次未结束自动跳过
+- 任务处理器：实现 `LpJob` 接口并注册为 Spring Bean 即可通过 Bean 名称调度；内置 `jobLogCleanupJob`（清理 N 天前运行日志）与 `serviceHealthCheckJob`（巡检注册中心全部实例健康）
+- cron 可视化：前端 `CronBuilder` 组件按秒 / 分钟 / 小时 / 日 / 月 / 周（星期）/ 年七个维度构建（每 X、每 N X、指定值，日周互斥自动置 `?`），实时预览未来 6 次运行时间；后端 `GET /tool/job/preview` 提供同等预览
+- 列表增强：上次运行时间（含成功 / 失败状态点）、下次运行时间（按 cron 实时计算）、创建人
+- 运行批次日志：每次执行（自动调度 / 手动执行）写入 `sys_job_log`（批次号、触发方式、触发人、状态、起止时间、耗时、参数、结果 / 异常），**不写系统操作日志**；任务列表「查看批次」跳转 `/tool/job/log` 查看与筛选，双击行或点详情查看完整运行信息
+- 接口：`GET /tool/job/list|info|preview|log/list|log/{logId}`、`POST /tool/job`、`PUT /tool/job|changeStatus`、`DELETE /tool/job/{ids}`、`POST /tool/job/run/{jobId}`
 
 ### 16.2 流程引擎（Dromara Warm-Flow 1.8.9，独立服务 lp-flow）
 
@@ -741,29 +752,37 @@ mvn -DskipTests clean package -P test    # 测试环境
 mvn -DskipTests clean package -P prod    # 线上环境
 ```
 
-`application.yml` 使用 `spring.profiles.active: @profiles.active@`，由 Maven 资源过滤替换；各服务均提供 `application-dev.yml` / `application-test.yml` / `application-prod.yml`，分别配置 MySQL、Redis、Nacos、文件根路径与文档开关。
+`application.yml` 使用 `spring.profiles.active: @profiles.active@`，由 Maven 资源过滤替换；各服务均提供 `application-dev.yml` / `application-test.yml` / `application-prod.yml`，分别配置 MySQL、Redis、注册中心地址（`EUREKA_ADDR`）、文件根路径与文档开关。
 
 ### 17.2 日志分类（各服务独立 logback-spring.xml）
 
-五个可启动服务（`lp-gateway` / `lp-system` / `lp-flow` / `lp-file` / `lp-monitor`）各自在 `src/main/resources/logback-spring.xml` 定义日志策略，按「模块目录 + 类别文件」落盘：
+六个可启动服务（`lp-registry` / `lp-gateway` / `lp-system` / `lp-flow` / `lp-file` / `lp-monitor`）各自在 `src/main/resources/logback-spring.xml` 定义日志策略，统一落盘到**项目根目录**（与 `README.md` 同级）的 `logs/` 下，并按模块名称分子目录：
 
 ```text
-logs/
-└── lp-system/
-    ├── lp-system.log              # 全量：INFO 及以上，含全部分类
-    ├── lp-system-error.log        # 仅 ERROR：告警与排障入口
-    ├── lp-system-business.log     # 业务：org.yeharn.lp.system.*
-    ├── lp-system-sql.log          # SQL：Mapper / JdbcTemplate（保留 7 天）
-    ├── lp-system-framework.log    # 框架：Spring / Nacos / Sa-Token / 连接池 / XXL-JOB
-    └── archive/                   # 跨天或超 50MB 后的 gz 归档
+logs/                            # 项目根，与 README.md 同级
+├── lp-registry/                 # 注册中心
+│   ├── lp-registry.log
+│   ├── lp-registry-error.log
+│   └── lp-registry-framework.log
+├── lp-gateway/
+├── lp-system/
+│   ├── lp-system.log              # 全量：INFO 及以上，含全部分类
+│   ├── lp-system-error.log        # 仅 ERROR：告警与排障入口
+│   ├── lp-system-business.log     # 业务：org.yeharn.lp.system.*
+│   ├── lp-system-sql.log          # SQL：Mapper / JdbcTemplate（保留 7 天）
+│   ├── lp-system-framework.log    # 框架：Spring / Eureka / Sa-Token / 连接池 / XXL-JOB
+│   └── archive/                   # 跨天或超 50MB 后的 gz 归档
+├── lp-monitor/
+├── lp-file/
+└── lp-flow/
 ```
 
-- 业务包 `org.yeharn.lp.xxx` 写入 `-business`；数据访问（Mapper、`JdbcTemplate`、MyBatis-Flex / MyBatis-Plus）写入 `-sql`；Spring、Nacos、Sa-Token、HikariCP、Lettuce、MinIO、XXL-JOB 等写入 `-framework`；未命中分类的日志进入全量文件
+- 业务包 `org.yeharn.lp.xxx` 写入 `-business`；数据访问（Mapper、`JdbcTemplate`、MyBatis-Flex / MyBatis-Plus）写入 `-sql`；Spring、Eureka、Sa-Token、HikariCP、Lettuce、MinIO、XXL-JOB 等写入 `-framework`；未命中分类的日志进入全量文件
 - 分类日志同时汇总进全量与错误文件（`additivity` 保持默认），既能按类排查，也能整体回溯
 - 滚动策略：单文件 50MB 或按天滚动并 gz 压缩；保留期全量 30 天、错误 60 天、SQL 7 天，配合 `totalSizeCap` 防止磁盘写满
-- 日志根目录默认 `logs/`（相对启动目录），可用 `-DLOG_PATH=/data/logs` 或环境变量 `LOG_PATH` 覆盖，目录名取 `spring.application.name`
+- 日志根目录默认 `logs/`：命令行在**项目根**执行 `java -jar xxx/target/xxx.jar`、或 IDE 运行配置 WorkingDirectory 为项目根时，日志即统一写入项目根 `logs/<模块名>/`；如需自定义位置，可用 `-DLOG_PATH=/data/logs` 或环境变量 `LOG_PATH` 覆盖，子目录名取 `spring.application.name`
 - SQL 日志开关：把对应 Mapper 包或 `org.springframework.jdbc.core.JdbcTemplate` 的 `level` 在 `DEBUG` / `INFO` 之间调整即可；`lp-flow` 通过 `JdbcTemplate` 与 Warm-Flow 引擎 Mapper 访问 `flow_*` 表，`lp-monitor` 通过 `JdbcTemplate` 执行监控查询
-- 网关无数据库访问，只生成全量 / 错误 / 业务 / 框架四类
+- 网关无数据库访问，只生成全量 / 错误 / 业务 / 框架四类；注册中心无业务 / SQL 分类，只生成全量 / 错误 / 框架三类
 
 ### 17.3 操作日志、登录日志按月分表
 
@@ -782,23 +801,47 @@ logs/
 - 玻璃拟态：卡片 / 搜索栏 / 表格容器 / 弹层统一 `backdrop-filter: blur()` + 半透明背景 + 大圆角，按钮与表单控件圆润化，背景叠加登录页同源的流动光斑动画
 - 切换入口：Navbar 主题下拉（色点预览），侧边栏、布局背景随主题变量联动
 
+### 18.1 组件尺寸与语义色体系（v1.1）
+
+- 尺寸令牌：`--el-component-size: 34px`（small 28 / large 40）与 `--el-font-size-base: 13px` 全局统一，按钮 / 输入 / 选择 / 表格行 / 分页 / 标签高度随令牌联动；胶囊按钮（`border-radius: 100px`）+ 语义色投影 + 悬浮微动效
+- 语义色令牌：`--lp-success / warning / danger / info` 全主题稳定，暗夜主题自动提亮；业务页面禁止写死色值，一律使用 `var()` 或 `color-mix(in srgb, var(--lp-primary) n%, transparent)` 派生
+- 表面层次：`--lp-surface / surface-hover / surface-sunken / border / divider` 五级表面变量，表格表头 / 描述列表 / 输入框底纹全部接入
+- 统计卡配色由主题派生（`sc-primary / sc-info / sc-success / sc-warning / sc-danger / sc-violet / sc-cyan / sc-slate`），切换主题即时生效
+- 图表颜色随主题：控制台 ECharts 轴线 / 标签 / 主色 / 面积渐变 / 饼图色板均通过 `getComputedStyle` 读取主题变量，`watch(theme)` 自动重绘
+
+### 18.2 多分辨率适配（v1.1）
+
+- 超宽屏 ≥1920：内容区 `max-width: 1760px` 居中，避免表格过度拉伸
+- 平板 ≤992：侧边栏自动折叠为 64px 图标模式（布局监听 `resize`，不覆盖用户偏好）；搜索表单两列布局（`:has(.el-button)` 排除按钮项），表格容器横向滚动，弹窗 92% / 抽屉 86% 宽
+- 手机 ≤768：搜索表单单列、分页居中并隐藏每页条数与跳页、`.hide-sm` 工具类隐藏次要内容、面包屑与用户名自动隐藏（Navbar `compact` 模式）
+- 断点内全局兜底：`.el-dialog` / `.el-drawer` / `.el-message-box` 宽度自适应，图表高度压缩
+
+### 18.3 监控中心科技风（v1.1，`src/styles/monitor.scss`）
+
+- `.tech-page` 深空渐变背景 + 网格光效（`mask` 渐隐）+ 循环扫描光带，固定深色观感、脱离主题切换
+- `.tech-header` 霓虹标题（呼吸灯脉冲点 + 发光文字 + 英文副标）、`.tech-metrics` 自动栅格指标卡（DIN 数字字体 + 霓虹光晕，按阈值 `is-warn / is-danger` 变色）
+- `.tech-page` 内 Element Plus 组件（卡片 / 表格 / 描述列表 / 进度条 / 输入框 / 分页 / 标签）统一深色玻璃化：卡片顶部霓虹渐变线、表格 hover 高亮、输入框霓虹描边
+- `.tech-gauge` 环形仪表（进度颜色按压力阈值读取主题语义色）、`.tech-kv` 键值行、`.tech-grid` 响应式栅格
+- 监控页进度条颜色（CPU / 内存 / 磁盘）读取 `--tech-cyan / --lp-warning / --lp-danger`，主题切换 + 10 秒轮询后自动同步
+
 ---
 
 ## 十九、已验证项
 
-- 三个后端服务（8080 / 9201 / 9202）均可正常启动并注册至 Nacos
+- 三个后端服务（8080 / 9201 / 9202）均可正常启动并注册至 Eureka（lp-registry :8849）
 - 网关端到端链路：验证码 → 登录 → `/auth/info` → `/auth/routers` → 用户/角色/菜单/字典/参数/公告/数据源/日志/在线/工作台/代码生成/三类监控接口均返回 `200`
 - 权限校验：`test` 用户（`common` 角色）访问 `/system/user/list`、`/monitor/server` 正常，访问 `/system/role/list`、`/system/menu/list` 返回 `403`，符合预期
 - 前端 `vue-tsc --noEmit` 通过，`vite build` 产物正常生成
+- UI 体系：1920 / 1024 / 414 三档分辨率截图验证（侧边栏自动折叠、搜索表单两列转单列、面包屑与用户名隐藏）；`aurora` / `violet` 主题切换后统计卡、图表、侧边栏即时联动；监控中心（服务监控 / Redis / 在线用户）深色科技风、指标卡阈值变色与仪表盘配色正常
 - Knife4j：网关 `/doc.html`（`200`）与 `/v3/api-docs/swagger-config` 正常，聚合分组为「系统服务 / 监控服务 / 文件服务 / 流程服务」，四个 `/lp-xxx/v3/api-docs` 均返回 `200`，Bearer 安全方案生效；`/auth/routers` 返回「接口文档」外链菜单（`meta.link`）
 - 文件服务（lp-file，9203）：`/file/upload` 返回 `url=/files/file/202611/{uuid}.txt`、`storageType=local`，`/file/list` 可分页查到记录，`/file/mode` 返回 `local` 与本地根目录 `C:/lp/upload`，静态资源 `/files/**` 直连返回 `200`
 - 消息中心：发送返回「已发送给 1 位用户」，未读数 `1`，标记已读后归零；`sys_message` 表结构已补齐 `update_by / update_time`
-- 定时任务：`/tool/job/list` 返回任务与调度器信息，cron 启停与立即执行正常
+- 定时任务（lp-job，9205）：`/tool/job/list` 返回上次/下次运行时间与创建人，启停、手动执行、新增删除正常；运行批次日志落 `sys_job_log`（自动调度 triggerBy=system、手动执行 triggerBy=admin），操作不再写入系统操作日志；cron 可视化构建器七个维度与未来 6 次运行时间预览正常
 - 流程服务（lp-flow，9204）：
   - `/flow/definitions` 返回自动部署的「请假审批」（key=leave，version=1）
   - `POST /flow/start` 发起成功（实例 `2117881150932336641`），`/flow/tasks` 返回「主管审批」待办，`POST /flow/tasks/{id}/complete` 通过后 `/flow/history` 状态为 `1`（审批通过）、含耗时
   - `POST /flow/model` 表单化建模部署成功（key=demo_flow），验证 JSON 模型生成逻辑
-- 服务健康：lp-system / lp-file / lp-flow / lp-monitor 的 `/actuator/health` 均为 `UP`（邮件未配置时已排除 mail 健康检查），Nacos 中注册 `lp-gateway/lp-system/lp-monitor/lp-file/lp-flow` 五个实例
+- 服务健康：lp-system / lp-file / lp-flow / lp-monitor / lp-job 的 `/actuator/health` 均为 `UP`（邮件未配置时已排除 mail 健康检查），Eureka 中注册 `lp-gateway/lp-system/lp-job/lp-monitor/lp-file/lp-flow` 六个实例
 - 慢 SQL：`/monitor/mysql/slow`、`/monitor/mysql/long` 返回审计数据，KILL 接口按 `threadId` 生效
 - 日志分表：`sys_oper_log_202611`（2 条）、`sys_login_log_202611`（6 条）自动创建并写入，历史数据保留在 `sys_oper_log` / `sys_login_log`
 - Maven 多环境：`-P dev|test|prod` 打包后 `application.yml` 中 `spring.profiles.active` 正确替换
