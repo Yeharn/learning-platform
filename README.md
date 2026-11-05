@@ -25,7 +25,7 @@
 | 工具库 | Hutool | 5.8.27 |
 | 接口文档 | Knife4j（OpenAPI3 + springdoc） | 4.5.0 |
 | 流程引擎 | Warm-Flow（Dromara 开源，Apache-2.0，`warm-flow-mybatis-plus-sb3-starter`） | 1.8.9 |
-| 定时任务 | Spring `ThreadPoolTaskScheduler` + XXL-JOB 执行器（可选） | 2.4.1 |
+| 定时任务 | Spring `ThreadPoolTaskScheduler` + Quartz CronExpression（独立服务 lp-job） | — |
 | 对象存储 | 本地磁盘 / MinIO / RustFS（S3 协议） | — |
 | 消息推送 | 站内信 / JavaMail / WebSocket | 随 Boot |
 | 构建 | Maven（多环境 profile，按环境打包） | 3.9+ |
@@ -65,13 +65,18 @@
         │ lp-system   :9201  │ │lp-file    │ │lp-flow      :9204  │
         │ 认证/用户/角色/菜单 │ │:9203      │ │Warm-Flow 流程引擎  │
         │ 字典/参数/部门/日志 │ │本地/MinIO │ │定义/发起/待办/历史 │
-        │ 消息中心/定时任务   │ │/RustFS    │ │                    │
+        │ 消息中心           │ │/RustFS    │ │                    │
         └─────────┬──────────┘ └─────┬─────┘ └─────────┬──────────┘
                   │                  │                 │
                   │        ┌─────────▼─────────────────▼──────┐
                   │        │ lp-monitor  :9202                │
                   │        │ 服务器 / Redis / MySQL / 慢 SQL   │
                   │        └──────────────────────────────────┘
+                  │
+                  │        ┌──────────────────────────────────┐
+                  └───────►│ lp-job      :9205                │
+                           │ 定时任务调度 / 运行批次日志       │
+                           └──────────────────────────────────┘
         ┌─────────┴────────────┐
         │                │
         ▼                ▼
@@ -91,6 +96,8 @@ LearningPlatform
 ├── sql/upgrade_v2.sql               # v2 增量升级（文件/消息/定时任务/流程菜单与表）
 ├── sql/upgrade_v3.sql               # v3 增量升级（流程中心菜单、流程沟通评论表）
 ├── sql/upgrade_v4.sql               # v4 增量升级（warm-flow 表单模板、已阅记录表与权限）
+├── sql/upgrade_v5.sql               # v5 增量升级（服务注册监控菜单）
+├── sql/upgrade_v6.sql               # v6 增量升级（任务运行日志表、上次运行字段、运行日志菜单）
 ├── sql/warm-flow/                   # Warm-Flow（Dromara）MySQL 建表脚本（flow_*）
 ├── lp-registry                      # 注册中心 :8849（Eureka Server）
 ├── lp-common                        # 公共模块（被所有服务依赖）
@@ -103,7 +110,8 @@ LearningPlatform
 │       └── log         @OperLog / BusinessType / OperLogAspect / OperLogEvent
 ├── lp-gateway                       # 网关 :8080
 ├── lp-modules
-│   ├── lp-system                    # 系统服务 :9201（认证/权限/消息中心/定时任务）
+│   ├── lp-system                    # 系统服务 :9201（认证/权限/消息中心）
+│   ├── lp-job                       # 定时任务服务 :9205（调度 / 运行批次日志）
 │   ├── lp-file                      # 文件服务 :9203（本地 / MinIO / RustFS）
 │   ├── lp-flow                      # 流程服务 :9204（Warm-Flow，独立数据层 MyBatis-Plus）
 │   └── lp-monitor                   # 监控服务 :9202（含慢 SQL 审计）
@@ -115,10 +123,11 @@ LearningPlatform
 | 服务 | 端口 | 说明 |
 | --- | --- | --- |
 | lp-gateway | 8080 | 统一入口，路由 + 鉴权 |
-| lp-system | 9201 | 系统业务（认证/权限/消息/定时任务） |
+| lp-system | 9201 | 系统业务（认证/权限/消息） |
 | lp-monitor | 9202 | 监控采集 |
 | lp-file | 9203 | 文件服务（本地 / MinIO / RustFS） |
 | lp-flow | 9204 | 流程服务（Warm-Flow Dromara） |
+| lp-job | 9205 | 定时任务（调度 / cron 可视化 / 运行批次日志） |
 | MySQL | 3306 | 数据库 `learning_platform` |
 | Redis | 6379 | 密码 `Redis@ZnSoft` |
 | lp-registry | 8849 | 注册中心（Eureka Server，启动即用，无需数据库） |
@@ -172,6 +181,7 @@ mvn -DskipTests clean package -P prod
 java -jar lp-registry/target/lp-registry.jar
 java -jar lp-gateway/target/lp-gateway.jar
 java -jar lp-modules/lp-system/target/lp-system.jar
+java -jar lp-modules/lp-job/target/lp-job.jar
 java -jar lp-modules/lp-monitor/target/lp-monitor.jar
 java -jar lp-modules/lp-file/target/lp-file.jar
 java -jar lp-modules/lp-flow/target/lp-flow.jar
@@ -179,7 +189,7 @@ java -jar lp-modules/lp-flow/target/lp-flow.jar
 
 `-P dev|test|prod` 会激活 `application-{env}.yml`（见「十七、多环境打包与日志分表」），无需手工改配置。
 
-启动顺序建议：lp-registry → lp-system / lp-monitor / lp-file / lp-flow → lp-gateway。也可直接在 IDE 中运行六个 `*Application` 主类。
+启动顺序建议：lp-registry → lp-system / lp-job / lp-monitor / lp-file / lp-flow → lp-gateway。也可直接在 IDE 中运行七个 `*Application` 主类。
 
 ### 5. 启动前端
 
@@ -235,7 +245,7 @@ Vite 已将 `/api` 代理到 `http://127.0.0.1:8080`（同时开启 `ws: true` �
 
 - **代码生成器**：读取数据库表 → 导入配置 → 编辑字段 → 预览 → 下载 ZIP，支持指定数据源
 - **接口文档**：Knife4j 聚合网关文档，侧边栏外链菜单一键打开，支持 Bearer Token 在线调试
-- **定时任务**：内置 `ThreadPoolTaskScheduler` 调度（cron 表达式可视化编辑、启停、立即执行一次、下次/上次执行时间），可选接入 XXL-JOB 执行器
+- **定时任务（lp-job 独立服务）**：`ThreadPoolTaskScheduler` + Quartz CronExpression 调度（支持秒级与年字段的 6/7 段表达式）、cron 七维可视化构建（秒/分/时/日/月/周/年）并实时预览未来 6 次运行时间、启停、立即执行、上次/下次运行时间、创建人；运行批次日志独立落库（`sys_job_log`，不写系统操作日志），任务列表一键跳转查看运行状态 / 耗时 / 参数 / 结果
 - **流程中心（lp-flow 独立服务）**：仿钉钉可视化流程设计器（主干分支画布 + 属性面板 + 条件/办理人表达式 + 表单模板设计 + DefJson 导入导出）、流程定义（版本化部署）、流程实例（流程图高亮当前节点 / 审批记录 / 沟通评论 / 已阅记录 / 挂起激活终止）、我的任务（办理、任意节点驳回与退回、加签、减签、转办、委派、拿回、撤销、任意跳转、已阅）、流程历史（耗时与状态回溯）
 
 ### 工作台与个人中心
@@ -439,7 +449,8 @@ public List<Map<String, Object>> listFromSlave() {
 | `sys_datasource` | 动态数据源配置 |
 | `sys_file` | 文件记录（分类、存储类型、URL、大小） |
 | `sys_message` | 站内消息（一人一条、已读标记、消息类型） |
-| `sys_job` | 定时任务（cron、调用目标、状态、上次/下次执行时间） |
+| `sys_job` | 定时任务（cron、处理器、状态、上次运行时间与状态） |
+| `sys_job_log` | 定时任务运行批次日志（触发方式/状态/起止时间/耗时/结果） |
 | `flow_definition` / `flow_node` / `flow_skip` / `flow_instance` / `flow_task` / `flow_his_task` / `flow_user` / `flow_form` | Warm-Flow 流程引擎表（`sql/warm-flow` 脚本初始化） |
 | `lp_flow_comment` | 流程沟通评论（实例维度的讨论记录） |
 | `lp_flow_form` | 流程表单模板（可视化表单设计器产物，定义通过 `form_path` 引用） |
@@ -473,7 +484,7 @@ public List<Map<String, Object>> listFromSlave() {
 | 在线 | `/online` | `GET /list`、`DELETE /{token}`（强制下线） |
 | 个人中心 | `/profile` | `GET`、`PUT`、`PUT /password` |
 | 代码生成 | `/tool/gen` | 见第七章 |
-| 定时任务 | `/tool/job` | CRUD、`PUT /changeStatus`、`POST /run/{jobId}`、`GET /info` |
+| 定时任务（lp-job） | `/tool/job` | CRUD、`PUT /changeStatus`、`POST /run/{jobId}`、`GET /info`、`GET /preview`（cron 预览）、`GET /log/list`、`GET /log/{logId}`（运行批次） |
 | 流程引擎（lp-flow） | `/flow` | `GET /definitions`、`POST /model`、`POST /deploy`、`POST /start`、`GET /tasks`、`GET /all-tasks`、`POST /tasks/{taskId}/complete`、`POST /tasks/{taskId}/reject`、`GET /instances`、`GET /history` |
 | 监控 | `/monitor` | `GET /server`、`GET /redis`、`GET /mysql`、`GET /mysql/slow`、`GET /mysql/long`、`GET /mysql/kill` |
 
@@ -531,7 +542,8 @@ lp-ui/src
     ├── system               user / role / menu / dept / dict / config / notice / datasource / file / message
     ├── monitor              server / redis / mysql / online / loginlog / operlog
     ├── tool/gen             代码生成器
-    ├── tool/job             定时任务
+    ├── tool/job             定时任务（lp-job 服务；CronBuilder 可视化构建）
+    ├── tool/job/log         任务运行批次日志
     ├── tool/flow            流程中心（definition / instance / task / history + FlowDesigner、FlowViewer 组件）
     ├── profile              个人中心
     └── error                403 / 404
@@ -697,13 +709,15 @@ VITE_APP_BASE_API=/api      # 开发环境经 Vite 代理到网关 8080
 
 ## 十六、定时任务与流程引擎
 
-### 16.1 定时任务（内置调度 + 可选 XXL-JOB）
+### 16.1 定时任务（独立服务 lp-job :9205）
 
-- 表 `sys_job`：`job_name`、`job_group`、`invoke_target`、`cron_expression`、`misfire_policy`、`status`、`remark`
-- 内置 Spring `ThreadPoolTaskScheduler`（`lp.job.pool-size`，默认 4）在启动时按 cron 注册全部启用任务；启停 / 改 cron 即时重排，自动回写上次与下次执行时间
-- `invoke_target` 支持 `beanName.methodName` 形式调用任意 Spring Bean，内置示例处理器 `demoJob.execute`
-- 手动执行：`POST /tool/job/run/{jobId}`；分布式调度场景设置 `lp.xxl-job.enabled=true` 并部署 xxl-job-admin（执行器端口 9999）
-- 接口：`GET /tool/job/list`、`GET /tool/job/info`、`POST /tool/job`、`PUT /tool/job`、`DELETE /tool/job/{ids}`、`PUT /tool/job/changeStatus`、`POST /tool/job/run/{jobId}`
+- 服务独立：任务调度从系统服务拆出（`lp-modules/lp-job`，端口 9205），与其他服务一样具备 dev/test/prod 配置与分类日志（business/sql/framework）；网关 `/tool/job/**` 优先路由至 lp-job
+- 调度内核：Spring `ThreadPoolTaskScheduler`（`lp.job.pool-size`）+ Quartz `CronExpression` 动态排程——每次执行后按最新配置重算下次触发，天然支持含「年」的 7 段表达式；同一任务串行执行，上一批次未结束自动跳过
+- 任务处理器：实现 `LpJob` 接口并注册为 Spring Bean 即可通过 Bean 名称调度；内置 `jobLogCleanupJob`（清理 N 天前运行日志）与 `serviceHealthCheckJob`（巡检注册中心全部实例健康）
+- cron 可视化：前端 `CronBuilder` 组件按秒 / 分钟 / 小时 / 日 / 月 / 周（星期）/ 年七个维度构建（每 X、每 N X、指定值，日周互斥自动置 `?`），实时预览未来 6 次运行时间；后端 `GET /tool/job/preview` 提供同等预览
+- 列表增强：上次运行时间（含成功 / 失败状态点）、下次运行时间（按 cron 实时计算）、创建人
+- 运行批次日志：每次执行（自动调度 / 手动执行）写入 `sys_job_log`（批次号、触发方式、触发人、状态、起止时间、耗时、参数、结果 / 异常），**不写系统操作日志**；任务列表「查看批次」跳转 `/tool/job/log` 查看与筛选，双击行或点详情查看完整运行信息
+- 接口：`GET /tool/job/list|info|preview|log/list|log/{logId}`、`POST /tool/job`、`PUT /tool/job|changeStatus`、`DELETE /tool/job/{ids}`、`POST /tool/job/run/{jobId}`
 
 ### 16.2 流程引擎（Dromara Warm-Flow 1.8.9，独立服务 lp-flow）
 
@@ -822,12 +836,12 @@ logs/                            # 项目根，与 README.md 同级
 - Knife4j：网关 `/doc.html`（`200`）与 `/v3/api-docs/swagger-config` 正常，聚合分组为「系统服务 / 监控服务 / 文件服务 / 流程服务」，四个 `/lp-xxx/v3/api-docs` 均返回 `200`，Bearer 安全方案生效；`/auth/routers` 返回「接口文档」外链菜单（`meta.link`）
 - 文件服务（lp-file，9203）：`/file/upload` 返回 `url=/files/file/202611/{uuid}.txt`、`storageType=local`，`/file/list` 可分页查到记录，`/file/mode` 返回 `local` 与本地根目录 `C:/lp/upload`，静态资源 `/files/**` 直连返回 `200`
 - 消息中心：发送返回「已发送给 1 位用户」，未读数 `1`，标记已读后归零；`sys_message` 表结构已补齐 `update_by / update_time`
-- 定时任务：`/tool/job/list` 返回任务与调度器信息，cron 启停与立即执行正常
+- 定时任务（lp-job，9205）：`/tool/job/list` 返回上次/下次运行时间与创建人，启停、手动执行、新增删除正常；运行批次日志落 `sys_job_log`（自动调度 triggerBy=system、手动执行 triggerBy=admin），操作不再写入系统操作日志；cron 可视化构建器七个维度与未来 6 次运行时间预览正常
 - 流程服务（lp-flow，9204）：
   - `/flow/definitions` 返回自动部署的「请假审批」（key=leave，version=1）
   - `POST /flow/start` 发起成功（实例 `2117881150932336641`），`/flow/tasks` 返回「主管审批」待办，`POST /flow/tasks/{id}/complete` 通过后 `/flow/history` 状态为 `1`（审批通过）、含耗时
   - `POST /flow/model` 表单化建模部署成功（key=demo_flow），验证 JSON 模型生成逻辑
-- 服务健康：lp-system / lp-file / lp-flow / lp-monitor 的 `/actuator/health` 均为 `UP`（邮件未配置时已排除 mail 健康检查），Eureka 中注册 `lp-gateway/lp-system/lp-monitor/lp-file/lp-flow` 五个实例
+- 服务健康：lp-system / lp-file / lp-flow / lp-monitor / lp-job 的 `/actuator/health` 均为 `UP`（邮件未配置时已排除 mail 健康检查），Eureka 中注册 `lp-gateway/lp-system/lp-job/lp-monitor/lp-file/lp-flow` 六个实例
 - 慢 SQL：`/monitor/mysql/slow`、`/monitor/mysql/long` 返回审计数据，KILL 接口按 `threadId` 生效
 - 日志分表：`sys_oper_log_202611`（2 条）、`sys_login_log_202611`（6 条）自动创建并写入，历史数据保留在 `sys_oper_log` / `sys_login_log`
 - Maven 多环境：`-P dev|test|prod` 打包后 `application.yml` 中 `spring.profiles.active` 正确替换

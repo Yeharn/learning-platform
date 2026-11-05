@@ -77,16 +77,6 @@ lp:
     # 邮件发送开关（消息中心模式为 email 时生效）
     enabled: false
     from: ${LP_MAIL_FROM:}
-  xxl-job:
-    # XXL-JOB 执行器（需要部署 xxl-job-admin 后开启）
-    enabled: false
-    admin-addresses: ${LP_XXL_ADMIN:http://127.0.0.1:8081/xxl-job-admin}
-    appname: lp-system
-    port: 9999
-    access-token: default_token
-  job:
-    # 内置定时任务调度线程池大小
-    pool-size: 4
 
 management:
   endpoints:

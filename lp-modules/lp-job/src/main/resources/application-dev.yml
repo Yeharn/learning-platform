@@ -1,0 +1,28 @@
+# @Author: Yeharn
+# @Date:2026-11-05
+# @Version: 1.0.0
+# @Description: 定时任务服务配置文件（本地开发环境）
+
+# 本地开发环境
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/learning_platform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: MySQL@ZnSoft
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-test-query: SELECT 1
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      password: Redis@ZnSoft
+      database: 0
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 4
+          min-idle: 1

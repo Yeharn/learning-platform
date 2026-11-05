@@ -30,6 +30,7 @@
         <module>lp-registry</module>
         <module>lp-gateway</module>
         <module>lp-modules/lp-system</module>
+        <module>lp-modules/lp-job</module>
         <module>lp-modules/lp-monitor</module>
         <module>lp-modules/lp-file</module>
         <module>lp-modules/lp-flow</module>
@@ -48,7 +49,6 @@
         <mysql.version>8.4.0</mysql.version>
         <knife4j.version>4.5.0</knife4j.version>
         <minio.version>8.5.10</minio.version>
-        <xxl-job.version>2.4.1</xxl-job.version>
         <!-- 国产工作流引擎 Warm-Flow（Dromara，Apache-2.0） -->
         <warm-flow.version>1.8.9</warm-flow.version>
         <mybatis-plus.version>3.5.17</mybatis-plus.version>
@@ -119,11 +119,6 @@
                 <groupId>io.minio</groupId>
                 <artifactId>minio</artifactId>
                 <version>${minio.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.xuxueli</groupId>
-                <artifactId>xxl-job-core</artifactId>
-                <version>${xxl-job.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.dromara.warm</groupId>
